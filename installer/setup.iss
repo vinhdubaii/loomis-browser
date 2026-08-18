@@ -50,7 +50,10 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 
 [Files]
 ; Everything from `dotnet publish` output gets dropped here by CI before
-; compiling this script (see .github/workflows/release.yml).
+; compiling this script (see .github/workflows/release.yml). This includes
+; the bundled Fixed Version WebView2 runtime folder ("WebView2\"), produced
+; automatically by the WebView2.Runtime.X64 NuGet package — no separate
+; [Files] entry is needed for it.
 Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]

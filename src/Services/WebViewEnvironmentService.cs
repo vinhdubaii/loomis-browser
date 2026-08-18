@@ -14,6 +14,21 @@ namespace LoomisBrowser.Services
     /// NormalEnvironment, and every private-window tab against PrivateEnvironment,
     /// so that private browsing never touches the persistent profile.
     ///
+    /// RUNTIME RESOLUTION: release builds ship a Fixed Version WebView2 Runtime
+    /// bundled in a "WebView2" folder next to LoomisBrowser.exe. That folder is
+    /// produced automatically by the WebView2.Runtime.X64 NuGet package (see
+    /// LoomisBrowser.csproj) on every build/publish — no manual download step,
+    /// no CI script to maintain, just bump that package's version to move to a
+    /// newer Chromium build. This avoids depending on the system-wide Evergreen
+    /// Runtime, whose dependency resolution can fail on trimmed-down Windows
+    /// images (observed: WebView2RuntimeNotFoundException / "Package dependency
+    /// criteria could not be resolved" on a Windows 11 build where AppX/framework
+    /// packages such as Microsoft.VCLibs had been removed, e.g. by aggressive
+    /// debloat tooling).
+    /// If that "WebView2" folder isn't present for some reason, we fall back to
+    /// browserExecutableFolder: null, which uses whatever Evergreen Runtime is
+    /// installed on the machine (useful as a dev-time safety net).
+    ///
     /// NOTE: Secure DNS is applied via AdditionalBrowserArguments, which only
     /// take effect when an environment is created. Changing the DNS setting at
     /// runtime therefore requires an app restart to apply — surfaced in
@@ -28,6 +43,21 @@ namespace LoomisBrowser.Services
         public CoreWebView2Environment? NormalEnvironment { get; private set; }
         public CoreWebView2Environment? PrivateEnvironment { get; private set; }
 
+        /// <summary>
+        /// Folder containing a Fixed Version WebView2 Runtime (msedgewebview2.exe
+        /// and friends), copied next to the app's own executable by the
+        /// WebView2.Runtime.X64 NuGet package. Null/absent means "use the
+        /// system Evergreen Runtime instead" (see class remarks).
+        /// </summary>
+        public static string? FixedRuntimeFolder
+        {
+            get
+            {
+                var candidate = Path.Combine(AppContext.BaseDirectory, "WebView2");
+                return Directory.Exists(candidate) ? candidate : null;
+            }
+        }
+
         public WebViewEnvironmentService(string appDataFolder, SettingsService settings)
         {
             _appDataFolder = appDataFolder;
@@ -39,9 +69,10 @@ namespace LoomisBrowser.Services
             var userDataFolder = Path.Combine(_appDataFolder, "WebView2Profile");
             Directory.CreateDirectory(userDataFolder);
 
+
             var options = new CoreWebView2EnvironmentOptions(BuildBrowserArguments());
             NormalEnvironment = await CoreWebView2Environment.CreateAsync(
-                browserExecutableFolder: null,
+                browserExecutableFolder: FixedRuntimeFolder,
                 userDataFolder: userDataFolder,
                 options: options);
         }
@@ -56,7 +87,7 @@ namespace LoomisBrowser.Services
 
             var options = new CoreWebView2EnvironmentOptions(BuildBrowserArguments());
             PrivateEnvironment = await CoreWebView2Environment.CreateAsync(
-                browserExecutableFolder: null,
+                browserExecutableFolder: FixedRuntimeFolder,
                 userDataFolder: _privateTempFolder,
                 options: options);
 

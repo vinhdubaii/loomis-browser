@@ -28,6 +28,17 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.8" />
+
+    <!-- Fixed Version WebView2 Runtime, bundled directly into the app so it
+         never depends on the system's Evergreen Runtime (which can fail to
+         initialize on trimmed-down Windows images — see WebViewEnvironmentService
+         for the full explanation). This is a community-maintained package
+         (not published by Microsoft) that repackages Microsoft's official
+         Fixed Version .cab as NuGet; bump the Version here to pick up a newer
+         Chromium build. It copies its "WebView2\" folder to the output/publish
+         directory automatically — no extra MSBuild wiring needed. It is large
+         (~250MB), so first restore will take a while; this is expected. -->
+    <PackageReference Include="WebView2.Runtime.X64" Version="131.0.2903.63" />
   </ItemGroup>
 
   <!-- UseWPF + UseWindowsForms both add implicit global usings for their
