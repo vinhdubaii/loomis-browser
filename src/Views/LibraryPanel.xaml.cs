@@ -76,7 +76,20 @@ namespace LoomisBrowser.Views
             return border;
         }
 
-        private async void Tab_Checked(object sender, RoutedEventArgs e) => await RefreshAsync();
+        private async void Tab_Checked(object sender, RoutedEventArgs e)
+        {
+            // BookmarksTabButton has IsChecked="True" in XAML, so WPF raises this
+            // Checked event once synchronously *during* InitializeComponent() —
+            // before ListItems (declared further down in the same XAML) has been
+            // wired up yet, which would NullReferenceException in RefreshAsync().
+            // IsLoaded is still false at that point, so this guard skips only that
+            // one spurious early call; MainWindow already calls RefreshAsync()
+            // explicitly whenever the panel is actually opened (LibraryButton_Click),
+            // and every real user click on these tabs happens after the panel is
+            // loaded, so real tab switches are unaffected.
+            if (!IsLoaded) return;
+            await RefreshAsync();
+        }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e) => CloseRequested?.Invoke(this, EventArgs.Empty);
     }
