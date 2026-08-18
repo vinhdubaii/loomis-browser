@@ -6,10 +6,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Web.WebView2.Core;
-using LoomisBrowser.Models;
-using LoomisBrowser.Views;
+using RemiBrowser.Models;
+using RemiBrowser.Views;
 
-namespace LoomisBrowser
+namespace RemiBrowser
 {
     /// <summary>
     /// Shell window for normal (non-private) browsing. Owns the tab collection,
@@ -31,12 +31,42 @@ namespace LoomisBrowser
             if (App.Settings.Current.Window.IsMaximized)
                 WindowState = WindowState.Maximized;
 
+            // Classic WindowChrome + Maximized-window issue: Windows reserves an
+            // invisible "overscan" margin (roughly SystemParameters.WindowResizeBorderThickness
+            // + WindowNonClientFrameThickness) around a borderless window when it's
+            // maximized, so the actual screen doesn't get overdrawn. WPF does NOT
+            // subtract that margin from content automatically, so without this the
+            // toolbar/tab strip/window buttons render partly off-screen and look
+            // "cut off" whenever the window is maximized. Reapplying the correct
+            // margin on every StateChanged fixes it without affecting the Normal
+            // (non-maximized) window at all.
+            StateChanged += (_, _) => UpdateRootGridMarginForWindowState();
+            UpdateRootGridMarginForWindowState();
+
             LibraryPanelControl.OpenUrlRequested += (_, url) => NavigateActiveTab(url);
             LibraryPanelControl.CloseRequested += (_, _) => LibraryPanelControl.Visibility = Visibility.Collapsed;
 
             RebuildBookmarkBar();
 
             _ = CreateNewTabAsync();
+        }
+
+        private void UpdateRootGridMarginForWindowState()
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                var resizeBorder = SystemParameters.WindowResizeBorderThickness;
+                var frame = SystemParameters.WindowNonClientFrameThickness;
+                RootGrid.Margin = new Thickness(
+                    resizeBorder.Left + frame.Left,
+                    resizeBorder.Top + frame.Top,
+                    resizeBorder.Right + frame.Right,
+                    resizeBorder.Bottom + frame.Bottom);
+            }
+            else
+            {
+                RootGrid.Margin = new Thickness(0);
+            }
         }
 
         // ============================= Tab management =============================
@@ -311,7 +341,7 @@ namespace LoomisBrowser
             menu.Items.Add(new Separator());
 
             menu.Items.Add(MenuItem("Settings", null, (_, _) => new SettingsWindow { Owner = this }.ShowDialog()));
-            menu.Items.Add(MenuItem("About Loomis Browser", null, (_, _) => ShowAbout()));
+            menu.Items.Add(MenuItem("About Remi Browser", null, (_, _) => ShowAbout()));
             menu.Items.Add(new Separator());
 
             menu.Items.Add(MenuItem("Exit", null, (_, _) => Close()));
@@ -331,10 +361,15 @@ namespace LoomisBrowser
         private void ShowAbout()
         {
             var version = App.Updates.CurrentVersion;
-            var engineVersion = CoreWebView2Environment.GetAvailableBrowserVersionString();
+            // Must pass the same browserExecutableFolder used by NormalEnvironment/
+            // PrivateEnvironment — the parameterless overload always looks for the
+            // system Evergreen Runtime, which throws WebView2RuntimeNotFoundException
+            // on machines that only have our bundled Fixed Version runtime.
+            var engineVersion = CoreWebView2Environment.GetAvailableBrowserVersionString(
+                Services.WebViewEnvironmentService.FixedRuntimeFolder);
             MessageBox.Show(
-                $"Loomis Browser {version}\nEngine (Chromium/WebView2): {engineVersion}\n\nOpen source under the MIT License.\ngithub.com/vinhdubaii/loomis-browser",
-                "About Loomis Browser", MessageBoxButton.OK, MessageBoxImage.None);
+                $"Remi Browser {version}\nEngine (Chromium/WebView2): {engineVersion}\n\nOpen source under the MIT License.\ngithub.com/vinhdubaii/remi-browser",
+                "About Remi Browser", MessageBoxButton.OK, MessageBoxImage.None);
         }
 
         private void OpenPrivateWindow()

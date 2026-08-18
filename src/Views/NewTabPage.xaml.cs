@@ -5,9 +5,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 
-namespace LoomisBrowser.Views
+namespace RemiBrowser.Views
 {
     /// <summary>
     /// The "about:newtab" page: a Top Sites grid built from HistoryService,

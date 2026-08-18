@@ -1,17 +1,36 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
+using RemiBrowser.Services;
 using MessageBox = System.Windows.MessageBox;
 
-namespace LoomisBrowser.Views
+namespace RemiBrowser.Views
 {
+    /// <summary>
+    /// Chromium/Cromite-style settings: a left sidebar switches between category
+    /// panels (General/Appearance/Privacy &amp; Security/Downloads/About) on the
+    /// right. Typing in the search box switches to a flattened view: every
+    /// field group (the Border elements wrapping each control block, tagged
+    /// with keywords) whose Tag contains the search text is shown across ALL
+    /// categories at once, regardless of which sidebar item is selected —
+    /// mirroring how chrome://settings' search behaves. Clearing the search
+    /// box reverts to normal single-category sidebar navigation.
+    /// </summary>
     public partial class SettingsWindow : Window
     {
+        private List<StackPanel> _allPanels = null!;
+        private List<Border> _allFieldGroups = null!;
+
         public SettingsWindow()
         {
             InitializeComponent();
+
+            _allPanels = new List<StackPanel> { PanelGeneral, PanelAppearance, PanelPrivacy, PanelDownloads, PanelAbout };
+            _allFieldGroups = _allPanels.SelectMany(p => p.Children.OfType<Border>()).ToList();
+
             LoadFromSettings();
         }
 
@@ -38,8 +57,8 @@ namespace LoomisBrowser.Views
             AskWhereToSaveCheck.IsChecked = s.Downloads.AskWhereToSaveEachFile;
             ShowDownloadsWhenDoneCheck.IsChecked = s.Downloads.ShowDownloadsWhenDone;
 
-            AboutText.Text = $"Loomis Browser {App.Updates.CurrentVersion}\n" +
-                              "Open source (MIT License) — github.com/vinhdubaii/loomis-browser";
+            AboutText.Text = $"Remi Browser {App.Updates.CurrentVersion}\n" +
+                              "Open source (MIT License) — github.com/vinhdubaii/remi-browser";
         }
 
         private static void SelectComboItemByTag(ComboBox combo, string tag)
@@ -53,6 +72,75 @@ namespace LoomisBrowser.Views
                 }
             }
         }
+
+        // ============================= Sidebar navigation =============================
+
+        private void Nav_Checked(object sender, RoutedEventArgs e)
+        {
+            // Same InitializeComponent-ordering guard as LibraryPanel: NavGeneral has
+            // IsChecked="True" in XAML, which fires this Checked handler once during
+            // InitializeComponent(), before _allPanels has been built yet (it's built
+            // in the constructor body, right after InitializeComponent() returns).
+            if (_allPanels == null) return;
+            if (!string.IsNullOrEmpty(SearchBox.Text)) return; // search view takes priority
+
+            ShowOnlyPanel(sender switch
+            {
+                _ when ReferenceEquals(sender, NavGeneral) => PanelGeneral,
+                _ when ReferenceEquals(sender, NavAppearance) => PanelAppearance,
+                _ when ReferenceEquals(sender, NavPrivacy) => PanelPrivacy,
+                _ when ReferenceEquals(sender, NavDownloads) => PanelDownloads,
+                _ when ReferenceEquals(sender, NavAbout) => PanelAbout,
+                _ => PanelGeneral
+            });
+        }
+
+        private void ShowOnlyPanel(StackPanel target)
+        {
+            foreach (var panel in _allPanels)
+                panel.Visibility = ReferenceEquals(panel, target) ? Visibility.Visible : Visibility.Collapsed;
+
+            foreach (var group in _allFieldGroups)
+                group.Visibility = Visibility.Visible; // reset any leftover filtering from a previous search
+        }
+
+        // ============================= Search filter =============================
+
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var query = SearchBox.Text.Trim().ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(query))
+            {
+                // Revert to whichever sidebar category is currently selected.
+                var selected = SidebarNav.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true);
+                if (selected != null) Nav_Checked(selected, new RoutedEventArgs());
+                return;
+            }
+
+            // Flattened search mode: every panel becomes visible, but only the
+            // field groups (Border with matching Tag keywords) inside them show.
+            foreach (var panel in _allPanels)
+                panel.Visibility = Visibility.Visible;
+
+            foreach (var group in _allFieldGroups)
+            {
+                var keywords = (group.Tag as string) ?? string.Empty;
+                group.Visibility = keywords.ToLowerInvariant().Contains(query)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+
+            // Hide whole panels that end up with zero visible field groups, so the
+            // section headers ("General", "Appearance"...) don't show up empty.
+            foreach (var panel in _allPanels)
+            {
+                var anyVisible = panel.Children.OfType<Border>().Any(b => b.Visibility == Visibility.Visible);
+                if (!anyVisible) panel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // ============================= Field handlers =============================
 
         private void ManageEnginesButton_Click(object sender, RoutedEventArgs e)
         {
@@ -89,7 +177,9 @@ namespace LoomisBrowser.Views
                 s.DefaultSearchEngineName = engine.Name;
 
             s.ShowBookmarkBar = ShowBookmarkBarCheck.IsChecked == true;
-            s.Theme = (AppTheme)ThemeCombo.SelectedIndex;
+
+            var newTheme = (AppTheme)ThemeCombo.SelectedIndex;
+            s.Theme = newTheme;
 
             s.SecureDns.Mode = DnsCustomOption.IsChecked == true ? SecureDnsMode.Custom
                 : DnsAutomaticOption.IsChecked == true ? SecureDnsMode.Automatic
@@ -104,6 +194,10 @@ namespace LoomisBrowser.Views
             s.Downloads.ShowDownloadsWhenDone = ShowDownloadsWhenDoneCheck.IsChecked == true;
 
             await App.Settings.SaveAsync();
+
+            // Theme takes effect immediately — no restart needed, unlike Secure DNS.
+            ThemeService.Apply(newTheme);
+
             DialogResult = true;
         }
 

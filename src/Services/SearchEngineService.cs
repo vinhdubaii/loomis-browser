@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using System.Net;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 
-namespace LoomisBrowser.Services
+namespace RemiBrowser.Services
 {
     /// <summary>
     /// Resolves whatever the user typed in the address bar into a navigable URL:

@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.Web.WebView2.Wpf;
 
-namespace LoomisBrowser.Models
+namespace RemiBrowser.Models
 {
     /// <summary>
     /// Represents a single browser tab. Each tab owns its own WebView2 control

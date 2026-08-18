@@ -1,4 +1,4 @@
-namespace LoomisBrowser.Models
+namespace RemiBrowser.Models
 {
     public class SearchEngine
     {

@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Web.WebView2.Core;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 
-namespace LoomisBrowser.Services
+namespace RemiBrowser.Services
 {
     /// <summary>
     /// Owns the two CoreWebView2Environment instances used by the app:
@@ -15,9 +15,9 @@ namespace LoomisBrowser.Services
     /// so that private browsing never touches the persistent profile.
     ///
     /// RUNTIME RESOLUTION: release builds ship a Fixed Version WebView2 Runtime
-    /// bundled in a "WebView2" folder next to LoomisBrowser.exe. That folder is
+    /// bundled in a "WebView2" folder next to RemiBrowser.exe. That folder is
     /// produced automatically by the WebView2.Runtime.X64 NuGet package (see
-    /// LoomisBrowser.csproj) on every build/publish — no manual download step,
+    /// RemiBrowser.csproj) on every build/publish — no manual download step,
     /// no CI script to maintain, just bump that package's version to move to a
     /// newer Chromium build. This avoids depending on the system-wide Evergreen
     /// Runtime, whose dependency resolution can fail on trimmed-down Windows
@@ -82,7 +82,7 @@ namespace LoomisBrowser.Services
             if (PrivateEnvironment != null)
                 return PrivateEnvironment;
 
-            _privateTempFolder = Path.Combine(Path.GetTempPath(), "LoomisBrowserPrivate_" + Guid.NewGuid().ToString("N"));
+            _privateTempFolder = Path.Combine(Path.GetTempPath(), "RemiBrowserPrivate_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_privateTempFolder);
 
             var options = new CoreWebView2EnvironmentOptions(BuildBrowserArguments());

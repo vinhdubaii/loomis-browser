@@ -3,12 +3,12 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 
-namespace LoomisBrowser.Services
+namespace RemiBrowser.Services
 {
     /// <summary>
-    /// Loads/saves AppSettings to a JSON file in %AppData%\Loomis Browser\settings.json.
+    /// Loads/saves AppSettings to a JSON file in %AppData%\Remi Browser\settings.json.
     /// Kept deliberately simple (no SQLite) since this is a single small object,
     /// not a table that needs querying.
     /// </summary>

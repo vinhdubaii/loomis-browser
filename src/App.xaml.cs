@@ -3,9 +3,9 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
-using LoomisBrowser.Services;
+using RemiBrowser.Services;
 
-namespace LoomisBrowser
+namespace RemiBrowser
 {
     /// <summary>
     /// Application entry point. Responsible for creating the shared, app-lifetime
@@ -41,16 +41,16 @@ namespace LoomisBrowser
         private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             MessageBox.Show(
-                $"Something went wrong, but Loomis Browser will keep running.\n\n{e.Exception}",
-                "Loomis Browser - Unexpected error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                $"Something went wrong, but Remi Browser will keep running.\n\n{e.Exception}",
+                "Remi Browser - Unexpected error", MessageBoxButton.OK, MessageBoxImage.Warning);
             e.Handled = true;
         }
 
         private void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             MessageBox.Show(
-                $"Loomis Browser hit a fatal error and needs to close.\n\n{e.ExceptionObject}",
-                "Loomis Browser - Fatal error", MessageBoxButton.OK, MessageBoxImage.Error);
+                $"Remi Browser hit a fatal error and needs to close.\n\n{e.ExceptionObject}",
+                "Remi Browser - Fatal error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
@@ -72,11 +72,13 @@ namespace LoomisBrowser
             {
                 AppDataFolder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Loomis Browser");
+                    "Remi Browser");
                 Directory.CreateDirectory(AppDataFolder);
 
                 Settings = new SettingsService(Path.Combine(AppDataFolder, "settings.json"));
                 await Settings.LoadAsync();
+
+                Services.ThemeService.Apply(Settings.Current.Theme);
 
                 History = new HistoryService(Path.Combine(AppDataFolder, "browser.db"));
                 await History.InitializeAsync();
@@ -91,7 +93,7 @@ namespace LoomisBrowser
 
                 Downloads = new DownloadService(Settings);
 
-                Updates = new UpdateService("vinhdubaii", "loomis-browser");
+                Updates = new UpdateService("vinhdubaii", "remi-browser");
 
                 // Fire-and-forget background update check; never blocks startup.
                 _ = Updates.CheckForUpdateAsync();
@@ -103,7 +105,7 @@ namespace LoomisBrowser
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"Loomis Browser failed to start.\n\n{ex}",
+                    $"Remi Browser failed to start.\n\n{ex}",
                     "Startup error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown(-1);
             }

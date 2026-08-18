@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace LoomisBrowser.Services
+namespace RemiBrowser.Services
 {
     public class UpdateInfo
     {
@@ -36,7 +36,7 @@ namespace LoomisBrowser.Services
             _repo = repo;
 
             _http = new HttpClient();
-            _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("LoomisBrowser", CurrentVersion.ToString()));
+            _http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("RemiBrowser", CurrentVersion.ToString()));
             _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         }
 
@@ -102,7 +102,7 @@ namespace LoomisBrowser.Services
         /// <summary>Downloads the installer to %TEMP% and launches it silently, replacing the running app.</summary>
         public async Task DownloadAndInstallAsync(UpdateInfo info)
         {
-            var tempPath = Path.Combine(Path.GetTempPath(), $"LoomisBrowser-Setup-{info.Version}.exe");
+            var tempPath = Path.Combine(Path.GetTempPath(), $"RemiBrowser-Setup-{info.Version}.exe");
 
             using (var response = await _http.GetAsync(info.DownloadUrl))
             {

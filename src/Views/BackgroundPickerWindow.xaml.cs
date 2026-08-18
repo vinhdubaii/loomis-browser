@@ -1,10 +1,10 @@
 using System;
 using System.IO;
 using System.Windows;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 using Microsoft.Win32;
 
-namespace LoomisBrowser.Views
+namespace RemiBrowser.Views
 {
     public partial class BackgroundPickerWindow : Window
     {

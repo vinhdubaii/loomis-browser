@@ -3,9 +3,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 
-namespace LoomisBrowser.Views
+namespace RemiBrowser.Views
 {
     public partial class LibraryPanel : UserControl
     {

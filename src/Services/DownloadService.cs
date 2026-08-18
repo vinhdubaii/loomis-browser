@@ -2,9 +2,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using Microsoft.Web.WebView2.Core;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 
-namespace LoomisBrowser.Services
+namespace RemiBrowser.Services
 {
     /// <summary>
     /// Tracks in-flight and completed downloads across all tabs/windows.

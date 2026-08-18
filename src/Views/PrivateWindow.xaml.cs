@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Input;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 
-namespace LoomisBrowser.Views
+namespace RemiBrowser.Views
 {
     /// <summary>
     /// A single-tab-per-window (kept simple on purpose) incognito browser.
@@ -16,7 +16,28 @@ namespace LoomisBrowser.Views
         public PrivateWindow()
         {
             InitializeComponent();
+            StateChanged += (_, _) => UpdateRootGridMarginForWindowState();
+            UpdateRootGridMarginForWindowState();
             _ = InitializeAsync();
+        }
+
+        private void UpdateRootGridMarginForWindowState()
+        {
+            // Same WindowChrome maximize-overscan fix as MainWindow — see there for details.
+            if (WindowState == WindowState.Maximized)
+            {
+                var resizeBorder = SystemParameters.WindowResizeBorderThickness;
+                var frame = SystemParameters.WindowNonClientFrameThickness;
+                RootGrid.Margin = new Thickness(
+                    resizeBorder.Left + frame.Left,
+                    resizeBorder.Top + frame.Top,
+                    resizeBorder.Right + frame.Right,
+                    resizeBorder.Bottom + frame.Bottom);
+            }
+            else
+            {
+                RootGrid.Margin = new Thickness(0);
+            }
         }
 
         private async System.Threading.Tasks.Task InitializeAsync()

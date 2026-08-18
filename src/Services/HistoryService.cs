@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using LoomisBrowser.Models;
+using RemiBrowser.Models;
 
-namespace LoomisBrowser.Services
+namespace RemiBrowser.Services
 {
     /// <summary>
     /// Owns the "history" table in browser.db. Private tabs must never call

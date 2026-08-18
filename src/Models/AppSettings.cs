@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace LoomisBrowser.Models
+namespace RemiBrowser.Models
 {
     public enum SecureDnsMode
     {

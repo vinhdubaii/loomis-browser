@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace LoomisBrowser.Models
+namespace RemiBrowser.Models
 {
     public enum DownloadState
     {

@@ -1,5 +1,5 @@
-; Loomis Browser — Inno Setup script
-; Builds LoomisBrowser-Setup-{#MyAppVersion}.exe from the dotnet publish output.
+; Remi Browser — Inno Setup script
+; Builds RemiBrowser-Setup-{#MyAppVersion}.exe from the dotnet publish output.
 ;
 ; AppVersion is normally overridden at CI time via:
 ;   iscc setup.iss /DMyAppVersion=1.2.0
@@ -9,10 +9,10 @@
   #define MyAppVersion "0.1.0"
 #endif
 
-#define MyAppName "Loomis Browser"
+#define MyAppName "Remi Browser"
 #define MyAppPublisher "Lidora Studio"
-#define MyAppURL "https://github.com/vinhdubaii/loomis-browser"
-#define MyAppExeName "LoomisBrowser.exe"
+#define MyAppURL "https://github.com/vinhdubaii/remi-browser"
+#define MyAppExeName "RemiBrowser.exe"
 
 [Setup]
 ; This GUID must stay constant across every release so Windows/Inno Setup
@@ -25,13 +25,17 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}/releases
-DefaultDirName={autopf}\Loomis Browser
-DefaultGroupName=Loomis Browser
+DefaultDirName={autopf}\Remi Browser
+DefaultGroupName=Remi Browser
 DisableProgramGroupPage=yes
-OutputBaseFilename=LoomisBrowser-Setup-{#MyAppVersion}
-; SetupIconFile is optional while Assets/loomis.ico doesn't exist yet.
-; Uncomment once the real icon is added:
-; SetupIconFile=..\src\Assets\loomis.ico
+OutputBaseFilename=RemiBrowser-Setup-{#MyAppVersion}
+; SetupIconFile is generated automatically by build.yml / release.yml (see
+; "Generate app icon from source PNG" step) from src/Assets/source/remi-logo-2000.png.
+; Guarded with #if so this .iss still compiles locally even before that step
+; has ever run (e.g. a fresh clone with no CI run yet).
+#if FileExists("..\src\Assets\remi.ico")
+SetupIconFile=..\src\Assets\remi.ico
+#endif
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -57,9 +61,9 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Loomis Browser"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\Uninstall Loomis Browser"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Loomis Browser"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{group}\Remi Browser"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\Uninstall Remi Browser"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\Remi Browser"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch Loomis Browser"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch Remi Browser"; Flags: nowait postinstall skipifsilent

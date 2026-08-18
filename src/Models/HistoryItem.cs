@@ -1,6 +1,6 @@
 using System;
 
-namespace LoomisBrowser.Models
+namespace RemiBrowser.Models
 {
     public class HistoryItem
     {
