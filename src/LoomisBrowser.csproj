@@ -12,7 +12,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>LoomisBrowser</AssemblyName>
     <RootNamespace>LoomisBrowser</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Product>Loomis Browser</Product>
     <Company>Lidora Studio</Company>
     <Copyright>Copyright © vinhdubaii</Copyright>
