@@ -40,6 +40,15 @@ jobs:
           -p:Version=${{ steps.version.outputs.version }}
           --output publish
 
+      - name: Verify bundled WebView2 runtime is present
+        shell: bash
+        run: |
+          if [ ! -d "publish/WebView2" ]; then
+            echo "::error::publish/WebView2 is missing — the WebView2.Runtime.X64 package didn't copy its output. Installer would ship without a working browser engine on machines lacking the Evergreen Runtime."
+            exit 1
+          fi
+          echo "Bundled WebView2 runtime found: $(du -sh publish/WebView2 | cut -f1)"
+
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
 
