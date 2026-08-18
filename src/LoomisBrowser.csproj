@@ -30,6 +30,17 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.8" />
   </ItemGroup>
 
+  <!-- UseWPF + UseWindowsForms both add implicit global usings for their
+       namespaces. System.Windows.Forms and System.Windows.Controls/Input
+       share several type names (UserControl, Application, ComboBox,
+       KeyEventArgs), which causes CS0104 "ambiguous reference" errors.
+       Removing the WinForms global using keeps WPF types resolving
+       implicitly; any WinForms type (e.g. FolderBrowserDialog) just needs
+       to be referenced with its full name, System.Windows.Forms.X. -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Assets folder is kept empty on purpose (user will add real icons later).
          Remove this ItemGroup exclusion once Assets/loomis.ico exists, or keep
