@@ -1,0 +1,133 @@
+<Window x:Class="LoomisBrowser.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:LoomisBrowser.Views"
+        Title="Loomis Browser"
+        Height="800" Width="1280"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource ChromeBackgroundBrush}"
+        WindowStyle="None"
+        AllowsTransparency="False">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      ResizeBorderThickness="6"
+                      GlassFrameThickness="0"
+                      CornerRadius="0"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Row 0: unified title bar / toolbar -->
+            <RowDefinition Height="Auto"/> <!-- Row 1: tab strip (collapsed when 1 tab) -->
+            <RowDefinition Height="Auto"/> <!-- Row 2: bookmark bar (toggle) -->
+            <RowDefinition Height="*"/>    <!-- Row 3: content host -->
+        </Grid.RowDefinitions>
+
+        <!-- ============================= Row 0: Toolbar / custom title bar ============================= -->
+        <Grid Grid.Row="0" Height="44" Background="{StaticResource ChromeBackgroundBrush}"
+              MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/> <!-- nav buttons -->
+                <ColumnDefinition Width="*"/>    <!-- address bar -->
+                <ColumnDefinition Width="Auto"/> <!-- library / menu -->
+                <ColumnDefinition Width="Auto"/> <!-- min/max/close -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Navigation buttons -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="8,0,4,0" VerticalAlignment="Center">
+                <Button x:Name="BackButton" Style="{StaticResource ChromeIconButton}" Click="BackButton_Click"
+                        ToolTip="Back" Content="◀"/>
+                <Button x:Name="ForwardButton" Style="{StaticResource ChromeIconButton}" Click="ForwardButton_Click"
+                        ToolTip="Forward" Content="▶"/>
+                <Button x:Name="ReloadButton" Style="{StaticResource ChromeIconButton}" Click="ReloadButton_Click"
+                        ToolTip="Reload" Content="⟳"/>
+                <Button x:Name="NewTabButton" Style="{StaticResource ChromeIconButton}" Click="NewTabButton_Click"
+                        ToolTip="New Tab (Ctrl+T)" Content="＋"/>
+            </StackPanel>
+
+            <!-- Address bar: pill shape, lock + text + star inline -->
+            <Border Grid.Column="1" Background="#E7E7EA" CornerRadius="16" Height="32"
+                    Margin="8,0" VerticalAlignment="Center">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="LockIcon" Grid.Column="0" Text="🔒" FontSize="12"
+                               Margin="12,0,4,0" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                    <TextBox x:Name="AddressBarTextBox" Grid.Column="1"
+                             Background="Transparent" BorderThickness="0"
+                             VerticalAlignment="Center" VerticalContentAlignment="Center"
+                             FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"
+                             KeyDown="AddressBarTextBox_KeyDown"
+                             GotFocus="AddressBarTextBox_GotFocus"/>
+
+                    <Button x:Name="BookmarkStarButton" Grid.Column="2" Style="{StaticResource ChromeIconButton}"
+                            Width="28" Height="28" Margin="0,0,2,0" Click="BookmarkStarButton_Click"
+                            ToolTip="Bookmark this page" Content="☆"/>
+                </Grid>
+            </Border>
+
+            <!-- Library + menu -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0" VerticalAlignment="Center">
+                <Button x:Name="LibraryButton" Style="{StaticResource ChromeIconButton}" Click="LibraryButton_Click"
+                        ToolTip="Bookmarks, History &amp; Downloads" Content="📚"/>
+                <Button x:Name="MenuButton" Style="{StaticResource ChromeIconButton}" Click="MenuButton_Click"
+                        ToolTip="Menu" Content="☰"/>
+            </StackPanel>
+
+            <!-- Window controls -->
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="4,0,4,0">
+                <Button Style="{StaticResource ChromeIconButton}" Click="MinimizeButton_Click" Content="—" ToolTip="Minimize"/>
+                <Button x:Name="MaximizeButton" Style="{StaticResource ChromeIconButton}" Click="MaximizeButton_Click" Content="▢" ToolTip="Maximize"/>
+                <Button Style="{StaticResource CloseButton}" Click="CloseButton_Click" Content="✕" ToolTip="Close"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ============================= Row 1: Tab strip (visible only when >= 2 tabs) ============================= -->
+        <Border Grid.Row="1" Background="{StaticResource ChromeBackgroundBrush}"
+                BorderBrush="{StaticResource ChromeBorderBrush}" BorderThickness="0,0,0,1">
+            <ItemsControl x:Name="TabStripItems" Height="34">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="6,0"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </Border>
+
+        <!-- ============================= Row 2: Bookmark bar (toggle via menu) ============================= -->
+        <Border x:Name="BookmarkBarHost" Grid.Row="2" Height="30"
+                Background="{StaticResource ChromeBackgroundBrush}"
+                BorderBrush="{StaticResource ChromeBorderBrush}" BorderThickness="0,0,0,1"
+                Visibility="Collapsed">
+            <ItemsControl x:Name="BookmarkBarItems">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="8,0"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </Border>
+
+        <!-- ============================= Row 3: Content host + slide-out Library panel ============================= -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Each BrowserTab's WebView2 (or NewTabPage) is added here in code-behind,
+                 with only the active tab's element set to Visible. -->
+            <Grid x:Name="TabContentHost" Grid.Column="0"/>
+
+            <views:LibraryPanel x:Name="LibraryPanelControl" Grid.Column="1"
+                                 Width="340" Visibility="Collapsed"/>
+        </Grid>
+    </Grid>
+</Window>

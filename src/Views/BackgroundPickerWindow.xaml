@@ -1,0 +1,30 @@
+<Window x:Class="LoomisBrowser.Views.BackgroundPickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Customize Background" Height="260" Width="360"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{StaticResource ChromeBackgroundBrush}">
+    <StackPanel Margin="20">
+        <TextBlock Text="New Tab Background" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+
+        <RadioButton x:Name="NoneOption" Content="None (default theme)" GroupName="BgType" Margin="0,4"/>
+        <RadioButton x:Name="ColorOption" Content="Solid color" GroupName="BgType" Margin="0,4"/>
+
+        <StackPanel Orientation="Horizontal" Margin="20,0,0,8" x:Name="ColorRow">
+            <TextBlock Text="Hex:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBox x:Name="ColorHexBox" Width="120" Text="#1A1A2E"/>
+        </StackPanel>
+
+        <RadioButton x:Name="CustomOption" Content="Custom image..." GroupName="BgType" Margin="0,4"/>
+        <StackPanel Orientation="Horizontal" Margin="20,0,0,8">
+            <Button x:Name="BrowseButton" Content="Choose file..." Padding="8,4" Click="BrowseButton_Click"/>
+            <TextBlock x:Name="SelectedFileText" VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"
+                       Foreground="{StaticResource TextSecondaryBrush}"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Padding="12,4" Margin="0,0,8,0" Click="CancelButton_Click"/>
+            <Button Content="Apply" Padding="12,4" Click="ApplyButton_Click"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
