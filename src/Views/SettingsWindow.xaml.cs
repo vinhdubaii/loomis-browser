@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Forms;
 using LoomisBrowser.Models;
 using MessageBox = System.Windows.MessageBox;
 
@@ -65,7 +64,7 @@ namespace LoomisBrowser.Views
 
         private void ChangeDownloadLocationButton_Click(object sender, RoutedEventArgs e)
         {
-            using var dialog = new FolderBrowserDialog
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog
             {
                 SelectedPath = DownloadLocationBox.Text
             };
