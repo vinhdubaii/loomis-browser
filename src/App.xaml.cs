@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using LoomisBrowser.Services;
 
 namespace LoomisBrowser
@@ -21,6 +23,40 @@ namespace LoomisBrowser
         public static UpdateService Updates { get; private set; } = null!;
 
         public static string AppDataFolder { get; private set; } = string.Empty;
+
+        public App()
+        {
+            // App-wide safety net: without these, ANY unhandled exception anywhere
+            // (a background Task, an "async void" event handler from WebView2
+            // events, etc.) kills the whole process with an opaque native error
+            // dialog (0xe0434352) and no indication of what actually went wrong.
+            // These handlers turn that into a readable message box instead, and
+            // for DispatcherUnhandledException (the common case — anything that
+            // eventually resumes on the UI thread) they let the app keep running.
+            DispatcherUnhandledException += OnDispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        }
+
+        private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show(
+                $"Something went wrong, but Loomis Browser will keep running.\n\n{e.Exception}",
+                "Loomis Browser - Unexpected error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            e.Handled = true;
+        }
+
+        private void OnAppDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show(
+                $"Loomis Browser hit a fatal error and needs to close.\n\n{e.ExceptionObject}",
+                "Loomis Browser - Fatal error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            e.SetObserved();
+        }
 
         protected override async void OnStartup(StartupEventArgs e)
         {
