@@ -161,7 +161,7 @@ namespace LoomisBrowser
         private void RebuildTabStrip()
         {
             TabStripItems.Items.Clear();
-            ((Grid)((Border)TabStripItems.Parent)).Visibility =
+            ((Border)TabStripItems.Parent).Visibility =
                 Tabs.Count >= 2 ? Visibility.Visible : Visibility.Collapsed;
 
             foreach (var tab in Tabs)
