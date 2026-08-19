@@ -36,8 +36,83 @@ namespace RemiBrowser.Services
                 );
                 CREATE INDEX IF NOT EXISTS idx_history_visited_at ON history(visited_at);
                 CREATE INDEX IF NOT EXISTS idx_history_url ON history(url);
+
+                CREATE TABLE IF NOT EXISTS pinned_sites (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    url TEXT NOT NULL UNIQUE,
+                    title TEXT NOT NULL DEFAULT '',
+                    favicon_url TEXT,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    pinned_at TEXT NOT NULL
+                );
             """;
             await cmd.ExecuteNonQueryAsync();
+        }
+
+        // ============================= Pinned sites (New Tab Page) =============================
+        // Kept in a separate table (not a flag on "history") on purpose: "Clear
+        // History" / private browsing must never touch pins, and a pinned site
+        // the user typed by hand may not have any history rows at all.
+
+        public async Task PinSiteAsync(string url, string title, string? faviconUrl)
+        {
+            using var conn = new SqliteConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                INSERT INTO pinned_sites (url, title, favicon_url, sort_order, pinned_at)
+                VALUES ($url, $title, $favicon,
+                    (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM pinned_sites), $pinnedAt)
+                ON CONFLICT(url) DO UPDATE SET title = excluded.title;
+            """;
+            cmd.Parameters.AddWithValue("$url", url);
+            cmd.Parameters.AddWithValue("$title", string.IsNullOrWhiteSpace(title) ? TryGetDomain(url) : title);
+            cmd.Parameters.AddWithValue("$favicon", (object?)faviconUrl ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("$pinnedAt", DateTime.UtcNow.ToString("O"));
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task UnpinSiteAsync(string url)
+        {
+            using var conn = new SqliteConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = "DELETE FROM pinned_sites WHERE url = $url;";
+            cmd.Parameters.AddWithValue("$url", url);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task<List<TopSiteItem>> GetPinnedSitesAsync()
+        {
+            var results = new List<TopSiteItem>();
+
+            using var conn = new SqliteConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                SELECT url, title, favicon_url
+                FROM pinned_sites
+                ORDER BY sort_order ASC;
+            """;
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var url = reader.GetString(0);
+                results.Add(new TopSiteItem
+                {
+                    Url = url,
+                    Domain = TryGetDomain(url),
+                    Title = reader.GetString(1),
+                    FaviconUrl = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    IsPinned = true
+                });
+            }
+
+            return results;
         }
 
         public async Task AddVisitAsync(string url, string title, string? faviconUrl)

@@ -4,7 +4,7 @@
         These styles have NO x:Key, so WPF applies them implicitly to every
         control of that TargetType in the app — this is what makes dark mode
         actually cover ComboBox/TextBox/CheckBox/RadioButton/Button everywhere,
-        including inside SettingsWindow and BackgroundPickerWindow, without
+        including inside SettingsWindow and NewTabSettingsWindow, without
         having to hand-apply a Style="..." to every single control usage.
         Everything references DynamicResource brushes from Themes/Light.xaml
         or Themes/Dark.xaml, so these re-color instantly when ThemeService
@@ -13,7 +13,7 @@
 
     <!-- ===================== TextBlock =====================
          Raw <TextBlock> elements without an explicit Foreground (there were
-         several — e.g. in BackgroundPickerWindow) stayed default black text
+         several — e.g. in NewTabSettingsWindow) stayed default black text
          regardless of theme. This implicit style gives every TextBlock a
          theme-aware default; any explicit Foreground set locally still wins. -->
     <Style TargetType="TextBlock">

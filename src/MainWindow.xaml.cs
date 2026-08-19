@@ -136,6 +136,61 @@ namespace RemiBrowser
             {
                 tab.FaviconUrl = tab.WebView.CoreWebView2.FaviconUri;
             };
+
+            // target="_blank", window.open(), Ctrl/middle-click — WebView2 defaults to
+            // popping its own separate OS window for these. Redirect them into our tab
+            // strip instead, unless the site explicitly asked for a small fixed-size
+            // popup (WindowFeatures.HasSize), e.g. OAuth login/consent windows, which
+            // we let open as a real small window since forcing those into a tab can
+            // break flows that inspect window.opener / window size.
+            tab.WebView.CoreWebView2.NewWindowRequested += async (_, e) =>
+            {
+                if (e.WindowFeatures.HasSize)
+                    return; // let WebView2 open its own small popup window
+
+                var deferral = e.GetDeferral();
+                try
+                {
+                    e.Handled = true;
+
+                    // Foreground for a normal click; background if the request came
+                    // from a middle-click / Ctrl+click (WebView2 reports this via
+                    // IsUserInitiated + the fact the target CoreWebView2 wasn't
+                    // navigated in-place — WindowFeatures alone can't tell us this,
+                    // so we default to foreground, matching most browsers' handling
+                    // of window.open()/target=_blank).
+                    var newTab = await CreateBackgroundTabAsync();
+                    e.NewWindow = newTab.WebView.CoreWebView2;
+                    SetActiveTab(newTab);
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
+            };
+        }
+
+        /// <summary>
+        /// Creates a tab and ensures its CoreWebView2 is ready, WITHOUT navigating
+        /// or activating it — used by NewWindowRequested, which needs a live
+        /// CoreWebView2 to hand back to WebView2 *before* any URL is known.
+        /// </summary>
+        private async System.Threading.Tasks.Task<BrowserTab> CreateBackgroundTabAsync()
+        {
+            var tab = new BrowserTab { IsPrivate = false };
+            Tabs.Add(tab);
+
+            TabContentHost.Children.Add(tab.WebView);
+            tab.WebView.Visibility = Visibility.Collapsed;
+
+            await tab.WebView.EnsureCoreWebView2Async(App.WebViewEnvironments.NormalEnvironment);
+            tab.IsNewTabPage = false;
+            WireTabEvents(tab);
+
+            App.Downloads.Attach(tab.WebView.CoreWebView2);
+
+            RebuildTabStrip();
+            return tab;
         }
 
         private void SetActiveTab(BrowserTab tab)

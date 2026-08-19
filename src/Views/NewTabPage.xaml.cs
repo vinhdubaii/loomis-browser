@@ -1,22 +1,33 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using RemiBrowser.Models;
 
 namespace RemiBrowser.Views
 {
     /// <summary>
-    /// The "about:newtab" page: a Top Sites grid built from HistoryService,
-    /// plus an optional custom background (color / preset / custom image),
-    /// editable via the Customize button (BackgroundPickerPopup).
+    /// The "about:newtab" page: a Pinned row + a Recently-visited (Top Sites) row,
+    /// each built from HistoryService, plus an optional custom background
+    /// (color / preset / custom image) and a configurable column count —
+    /// editable via the Customize button (NewTabSettingsWindow).
     /// </summary>
     public partial class NewTabPage : UserControl
     {
         public event EventHandler<string>? NavigateRequested;
+
+        // Tile geometry — the circle itself plus the label under it. Column
+        // count only changes ItemWidth (WrapPanel handles the actual wrapping),
+        // so this is an approximation of "N columns" rather than an exact grid,
+        // same tradeoff Chrome/Edge make with their top-sites row.
+        private const double TileDiameter = 64;
+        private const double TileCellHeight = 96;
 
         public NewTabPage()
         {
@@ -28,27 +39,59 @@ namespace RemiBrowser.Views
         {
             ApplyBackground();
 
-            var topSites = await App.History.GetTopSitesAsync(8);
+            var layout = App.Settings.Current.NewTabLayout;
+            ApplyColumnWidth();
 
-            TopSitesGrid.Items.Clear();
-            EmptyStateText.Visibility = topSites.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            PinnedSection.Visibility = layout.ShowPinnedSites ? Visibility.Visible : Visibility.Collapsed;
+            RecentSection.Visibility = layout.ShowRecentlyVisited ? Visibility.Visible : Visibility.Collapsed;
 
-            foreach (var site in topSites)
-            {
-                var tile = BuildTile(site);
-                TopSitesGrid.Items.Add(tile);
-            }
+            var pinned = layout.ShowPinnedSites
+                ? await App.History.GetPinnedSitesAsync()
+                : new System.Collections.Generic.List<TopSiteItem>();
+            var pinnedUrls = pinned.Select(p => p.Url).ToHashSet();
+
+            var recent = layout.ShowRecentlyVisited
+                ? (await App.History.GetTopSitesAsync(12)).Where(s => !pinnedUrls.Contains(s.Url)).ToList()
+                : new System.Collections.Generic.List<TopSiteItem>();
+
+            PinnedGrid.Items.Clear();
+            foreach (var site in pinned)
+                PinnedGrid.Items.Add(BuildTile(site));
+
+            RecentGrid.Items.Clear();
+            if (layout.ShowPinnedSites)
+                RecentGrid.Items.Add(BuildAddTile());
+            foreach (var site in recent)
+                RecentGrid.Items.Add(BuildTile(site));
+
+            EmptyStateText.Visibility =
+                pinned.Count == 0 && recent.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        /// <summary>
+        /// Recomputes tile cell width from the user's chosen column count.
+        /// WrapPanel wraps automatically once tiles no longer fit a row, so
+        /// setting a fixed per-tile width is enough to get an "N columns" grid
+        /// without hand-rolling a UniformGrid with row logic.
+        /// </summary>
+        private void ApplyColumnWidth()
+        {
+            var columns = Math.Clamp(App.Settings.Current.NewTabLayout.Columns, 2, 8);
+            _cellWidth = 900.0 / columns;
+        }
+
+        private double _cellWidth = 130;
+
+        /// <summary>
+        /// A tile: circular, blurred glass background, favicon centered inside,
+        /// label underneath. Replaces the old flat white rounded-rectangle tile.
+        /// </summary>
         private Border BuildTile(TopSiteItem site)
         {
-            var border = new Border
+            var cell = new Border
             {
-                Width = 130,
-                Height = 90,
-                Margin = new Thickness(8),
-                CornerRadius = new CornerRadius(10),
-                Background = Brushes.White,
+                Width = _cellWidth,
+                Height = TileCellHeight,
                 Cursor = Cursors.Hand
             };
 
@@ -58,43 +101,174 @@ namespace RemiBrowser.Views
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            stack.Children.Add(new TextBlock
+            var circle = new Ellipse
             {
-                Text = "🌐",
-                FontSize = 24,
+                Width = TileDiameter,
+                Height = TileDiameter,
                 HorizontalAlignment = HorizontalAlignment.Center
-                // No Foreground override needed — it's an emoji glyph, renders
-                // in its own colors regardless of the implicit TextBlock theme style.
-            });
+            };
+
+            // Frosted-glass look: semi-transparent surface color + a blur behind it,
+            // instead of the old hard-edged solid-white square.
+            var glass = (Brush)FindResource("SurfaceAltBrush");
+            var glassClone = glass.Clone();
+            glassClone.Opacity = 0.55;
+            circle.Fill = glassClone;
+            circle.Effect = new BlurEffect { Radius = 6, KernelType = KernelType.Gaussian };
+
+            var iconHost = new Grid
+            {
+                Width = TileDiameter,
+                Height = TileDiameter,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            iconHost.Children.Add(circle);
+
+            var favicon = new Image
+            {
+                Width = 28,
+                Height = 28,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            TrySetFavicon(favicon, site.FaviconUrl, site.Domain);
+            iconHost.Children.Add(favicon);
+
+            stack.Children.Add(iconHost);
 
             stack.Children.Add(new TextBlock
             {
                 Text = string.IsNullOrEmpty(site.Title) ? site.Domain : site.Title,
                 FontSize = 11,
-                Margin = new Thickness(0, 6, 0, 0),
-                MaxWidth = 110,
+                Margin = new Thickness(0, 8, 0, 0),
+                MaxWidth = _cellWidth - 8,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                // Explicit dark color — the implicit app-wide TextBlock style
-                // defaults to TextPrimaryBrush, which is near-white in Dark
-                // theme. This card's Background is hardcoded White regardless
-                // of theme (see above), so the text must stay dark too or it
-                // becomes unreadable (white-on-white) in Dark mode.
-                Foreground = Brushes.Black
+                Foreground = (Brush)FindResource("TextPrimaryBrush")
             });
 
-            border.Child = stack;
-            border.MouseLeftButtonDown += (_, _) => NavigateRequested?.Invoke(this, site.Url);
+            cell.Child = stack;
+            cell.MouseLeftButtonDown += (_, _) => NavigateRequested?.Invoke(this, site.Url);
 
             var contextMenu = new ContextMenu();
-            var removeItem = new MenuItem { Header = "Remove from Top Sites" };
-            // Removal is intentionally left as a follow-up: would need a "hidden sites"
-            // list in HistoryService so the tile doesn't just reappear next refresh.
-            contextMenu.Items.Add(removeItem);
-            border.ContextMenu = contextMenu;
+            if (site.IsPinned)
+            {
+                var unpin = new MenuItem { Header = "Unpin" };
+                unpin.Click += async (_, _) =>
+                {
+                    await App.History.UnpinSiteAsync(site.Url);
+                    await RefreshAsync();
+                };
+                contextMenu.Items.Add(unpin);
+            }
+            else
+            {
+                var pin = new MenuItem { Header = "Pin" };
+                pin.Click += async (_, _) =>
+                {
+                    await App.History.PinSiteAsync(site.Url, site.Title, site.FaviconUrl);
+                    await RefreshAsync();
+                };
+                contextMenu.Items.Add(pin);
+            }
+            cell.ContextMenu = contextMenu;
 
-            return border;
+            return cell;
+        }
+
+        /// <summary>The "+" tile at the end of Recently visited — opens a small
+        /// popup to pin an arbitrary name + URL, for sites with no visit history.</summary>
+        private Border BuildAddTile()
+        {
+            var cell = new Border
+            {
+                Width = _cellWidth,
+                Height = TileCellHeight,
+                Cursor = Cursors.Hand
+            };
+
+            var stack = new StackPanel
+            {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var circle = new Ellipse
+            {
+                Width = TileDiameter,
+                Height = TileDiameter,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var glass = (Brush)FindResource("SurfaceAltBrush");
+            var glassClone = glass.Clone();
+            glassClone.Opacity = 0.35;
+            circle.Fill = glassClone;
+            circle.Effect = new BlurEffect { Radius = 6, KernelType = KernelType.Gaussian };
+
+            var iconHost = new Grid { Width = TileDiameter, Height = TileDiameter, HorizontalAlignment = HorizontalAlignment.Center };
+            iconHost.Children.Add(circle);
+            iconHost.Children.Add(new TextBlock
+            {
+                Text = "+",
+                FontSize = 24,
+                FontWeight = FontWeights.Light,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = (Brush)FindResource("TextPrimaryBrush")
+            });
+            stack.Children.Add(iconHost);
+
+            stack.Children.Add(new TextBlock
+            {
+                Text = "Add site",
+                FontSize = 11,
+                Margin = new Thickness(0, 8, 0, 0),
+                TextAlignment = TextAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = (Brush)FindResource("TextSecondaryBrush")
+            });
+
+            cell.Child = stack;
+            cell.MouseLeftButtonDown += async (_, _) =>
+            {
+                var popup = new AddPinnedSiteWindow { Owner = Window.GetWindow(this) };
+                if (popup.ShowDialog() == true && !string.IsNullOrWhiteSpace(popup.ResultUrl))
+                {
+                    await App.History.PinSiteAsync(popup.ResultUrl!, popup.ResultTitle ?? string.Empty, null);
+                    await RefreshAsync();
+                }
+            };
+
+            return cell;
+        }
+
+        /// <summary>
+        /// Loads the favicon: prefers the URL WebView2/history already recorded;
+        /// falls back to Google's public favicon service (handles both "no
+        /// favicon_url on record yet" and manually-pinned sites that were never
+        /// actually visited, so have no history-derived favicon at all).
+        /// </summary>
+        private static void TrySetFavicon(Image target, string? faviconUrl, string domain)
+        {
+            var url = !string.IsNullOrWhiteSpace(faviconUrl)
+                ? faviconUrl
+                : $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(domain)}&sz=64";
+
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.UriSource = new Uri(url, UriKind.Absolute);
+                bitmap.EndInit();
+                target.Source = bitmap;
+            }
+            catch
+            {
+                // Swallow — a missing favicon just leaves the tile with an empty
+                // circle rather than crashing the New Tab Page.
+            }
         }
 
         private void ApplyBackground()
@@ -133,11 +307,11 @@ namespace RemiBrowser.Views
 
         private async void CustomizeButton_Click(object sender, RoutedEventArgs e)
         {
-            var popup = new BackgroundPickerWindow { Owner = Window.GetWindow(this) };
+            var popup = new NewTabSettingsWindow { Owner = Window.GetWindow(this) };
             if (popup.ShowDialog() == true)
             {
                 await App.Settings.SaveAsync();
-                ApplyBackground();
+                await RefreshAsync();
             }
         }
     }
