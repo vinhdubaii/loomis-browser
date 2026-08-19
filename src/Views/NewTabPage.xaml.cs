@@ -285,7 +285,7 @@ namespace RemiBrowser.Views
 
                 case NewTabBackgroundType.Preset or NewTabBackgroundType.Custom when !string.IsNullOrEmpty(bg.Value):
                     var path = bg.Type == NewTabBackgroundType.Preset
-                        ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Backgrounds", bg.Value)
+                        ? System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Backgrounds", bg.Value)
                         : bg.Value;
 
                     if (File.Exists(path))
