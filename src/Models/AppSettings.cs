@@ -64,6 +64,16 @@ namespace RemiBrowser.Models
         public double OverlayOpacity { get; set; } = 0.3;
     }
 
+    /// <summary>New Tab Page grid layout: which sections show, and column count.</summary>
+    public class NewTabLayoutSettings
+    {
+        public bool ShowPinnedSites { get; set; } = true;
+        public bool ShowRecentlyVisited { get; set; } = true;
+
+        /// <summary>2–8, clamped again defensively in NewTabPage.ApplyColumnWidth.</summary>
+        public int Columns { get; set; } = 4;
+    }
+
     public class WindowSettings
     {
         public double Width { get; set; } = 1280;
@@ -109,6 +119,7 @@ namespace RemiBrowser.Models
         public bool ShowBookmarkBar { get; set; } = false;
         public AppTheme Theme { get; set; } = AppTheme.System;
         public NewTabBackgroundSettings NewTabBackground { get; set; } = new();
+        public NewTabLayoutSettings NewTabLayout { get; set; } = new();
         public CustomThemeSettings CustomTheme { get; set; } = new();
 
         // Privacy & Security
