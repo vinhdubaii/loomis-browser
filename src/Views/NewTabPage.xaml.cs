@@ -290,7 +290,14 @@ namespace RemiBrowser.Views
 
                     if (File.Exists(path))
                     {
-                        RootGrid.Background = new ImageBrush(new BitmapImage(new Uri(path)))
+                        var backgroundBitmap = new BitmapImage();
+                        backgroundBitmap.BeginInit();
+                        backgroundBitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        backgroundBitmap.UriSource = new Uri(path);
+                        backgroundBitmap.EndInit();
+                        backgroundBitmap.Freeze();
+
+                        RootGrid.Background = new ImageBrush(backgroundBitmap)
                         {
                             Stretch = Stretch.UniformToFill
                         };

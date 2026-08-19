@@ -15,6 +15,7 @@ namespace RemiBrowser.Views
     public partial class NewTabSettingsWindow : Window
     {
         private string? _selectedCustomImagePath;
+        private bool _userPickedNewFile;
 
         public NewTabSettingsWindow()
         {
@@ -59,6 +60,7 @@ namespace RemiBrowser.Views
             if (dialog.ShowDialog() == true)
             {
                 _selectedCustomImagePath = dialog.FileName;
+                _userPickedNewFile = true;
                 SelectedFileText.Text = Path.GetFileName(dialog.FileName);
                 CustomOption.IsChecked = true;
             }
@@ -85,16 +87,27 @@ namespace RemiBrowser.Views
             }
             else if (CustomOption.IsChecked == true && _selectedCustomImagePath != null)
             {
-                // Copy into AppData so the background survives even if the
-                // original file is later moved or deleted by the user.
-                var backgroundsFolder = Path.Combine(App.AppDataFolder, "Backgrounds");
-                Directory.CreateDirectory(backgroundsFolder);
+                if (_userPickedNewFile)
+                {
+                    // Copy into AppData so the background survives even if the
+                    // original file is later moved or deleted by the user.
+                    var backgroundsFolder = Path.Combine(App.AppDataFolder, "Backgrounds");
+                    Directory.CreateDirectory(backgroundsFolder);
 
-                var destination = Path.Combine(backgroundsFolder, Path.GetFileName(_selectedCustomImagePath));
-                File.Copy(_selectedCustomImagePath, destination, overwrite: true);
+                    var destination = Path.Combine(backgroundsFolder, Path.GetFileName(_selectedCustomImagePath));
+                    File.Copy(_selectedCustomImagePath, destination, overwrite: true);
 
-                bg.Type = NewTabBackgroundType.Custom;
-                bg.Value = destination;
+                    bg.Type = NewTabBackgroundType.Custom;
+                    bg.Value = destination;
+                }
+                else
+                {
+                    // No new file was picked (Custom was already the saved
+                    // background) — keep the existing saved path as-is instead
+                    // of re-copying it onto itself.
+                    bg.Type = NewTabBackgroundType.Custom;
+                    bg.Value = _selectedCustomImagePath;
+                }
             }
 
             DialogResult = true;
