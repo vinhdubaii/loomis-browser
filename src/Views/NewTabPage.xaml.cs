@@ -63,6 +63,8 @@ namespace RemiBrowser.Views
                 Text = "🌐",
                 FontSize = 24,
                 HorizontalAlignment = HorizontalAlignment.Center
+                // No Foreground override needed — it's an emoji glyph, renders
+                // in its own colors regardless of the implicit TextBlock theme style.
             });
 
             stack.Children.Add(new TextBlock
@@ -73,7 +75,13 @@ namespace RemiBrowser.Views
                 MaxWidth = 110,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Center,
+                // Explicit dark color — the implicit app-wide TextBlock style
+                // defaults to TextPrimaryBrush, which is near-white in Dark
+                // theme. This card's Background is hardcoded White regardless
+                // of theme (see above), so the text must stay dark too or it
+                // becomes unreadable (white-on-white) in Dark mode.
+                Foreground = Brushes.Black
             });
 
             border.Child = stack;

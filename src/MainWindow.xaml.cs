@@ -26,22 +26,16 @@ namespace RemiBrowser
         {
             InitializeComponent();
 
+            // Correct fix for the WindowChrome + WindowStyle="None" + Maximized
+            // rendering bug (previously patched with a margin-compensation hack
+            // that overcompensated and caused visible black gaps — see
+            // Interop/WindowMaximizeFix.cs for the full story).
+            Interop.WindowMaximizeFix.Apply(this);
+
             Width = App.Settings.Current.Window.Width;
             Height = App.Settings.Current.Window.Height;
             if (App.Settings.Current.Window.IsMaximized)
                 WindowState = WindowState.Maximized;
-
-            // Classic WindowChrome + Maximized-window issue: Windows reserves an
-            // invisible "overscan" margin (roughly SystemParameters.WindowResizeBorderThickness
-            // + WindowNonClientFrameThickness) around a borderless window when it's
-            // maximized, so the actual screen doesn't get overdrawn. WPF does NOT
-            // subtract that margin from content automatically, so without this the
-            // toolbar/tab strip/window buttons render partly off-screen and look
-            // "cut off" whenever the window is maximized. Reapplying the correct
-            // margin on every StateChanged fixes it without affecting the Normal
-            // (non-maximized) window at all.
-            StateChanged += (_, _) => UpdateRootGridMarginForWindowState();
-            UpdateRootGridMarginForWindowState();
 
             LibraryPanelControl.OpenUrlRequested += (_, url) => NavigateActiveTab(url);
             LibraryPanelControl.CloseRequested += (_, _) => LibraryPanelControl.Visibility = Visibility.Collapsed;
@@ -49,24 +43,6 @@ namespace RemiBrowser
             RebuildBookmarkBar();
 
             _ = CreateNewTabAsync();
-        }
-
-        private void UpdateRootGridMarginForWindowState()
-        {
-            if (WindowState == WindowState.Maximized)
-            {
-                var resizeBorder = SystemParameters.WindowResizeBorderThickness;
-                var frame = SystemParameters.WindowNonClientFrameThickness;
-                RootGrid.Margin = new Thickness(
-                    resizeBorder.Left + frame.Left,
-                    resizeBorder.Top + frame.Top,
-                    resizeBorder.Right + frame.Right,
-                    resizeBorder.Bottom + frame.Bottom);
-            }
-            else
-            {
-                RootGrid.Margin = new Thickness(0);
-            }
         }
 
         // ============================= Tab management =============================

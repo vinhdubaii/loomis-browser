@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using RemiBrowser.Interop;
 using RemiBrowser.Models;
 using RemiBrowser.Services;
 using MessageBox = System.Windows.MessageBox;
@@ -27,11 +28,28 @@ namespace RemiBrowser.Views
         public SettingsWindow()
         {
             InitializeComponent();
+            Interop.WindowMaximizeFix.Apply(this);
 
             _allPanels = new List<StackPanel> { PanelGeneral, PanelAppearance, PanelPrivacy, PanelDownloads, PanelAbout };
             _allFieldGroups = _allPanels.SelectMany(p => p.Children.OfType<Border>()).ToList();
 
             LoadFromSettings();
+        }
+
+        // ============================= Custom title bar =============================
+
+        private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2) { MaximizeButton_Click(sender, e); return; }
+            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed) DragMove();
+        }
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+            MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "▢";
         }
 
         private void LoadFromSettings()

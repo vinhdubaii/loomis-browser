@@ -116,6 +116,33 @@ and, when a newer tag is found, can download and silently run that installer
 
 ## Recent fixes (this round)
 
+- **Maximize bug fixed properly** — the previous "fix" (margin compensation
+  via `SystemParameters.WindowResizeBorderThickness` +
+  `WindowNonClientFrameThickness`) overcompensated and caused visible black
+  gaps above the toolbar and a sliver on the left edge, plus owned dialogs
+  (Settings, Customize Background) rendering misaligned. Replaced with the
+  actually-correct technique: `Interop/WindowMaximizeFix.cs` hooks
+  `WM_GETMINMAXINFO` (the same message native maximized windows use) so
+  Windows itself sizes/positions the window to exactly the monitor's work
+  area. No margin/padding hack needed anywhere anymore — applied to
+  `MainWindow`, `PrivateWindow`, `SettingsWindow`, and
+  `BackgroundPickerWindow`.
+- **Dark mode now actually covers every control** — previously only the
+  hand-styled toolbar/sidebar elements re-colored; standard `ComboBox`,
+  `TextBox`, `CheckBox`, `RadioButton`, `Button`, and plain `TextBlock`
+  elements kept their default (light/black-text) rendering, and
+  `SettingsWindow`/`BackgroundPickerWindow` kept the OS-native (always-light)
+  title bar. Fixed by: (1) `Themes/ControlStyles.xaml` — implicit
+  (`TargetType`-only, no `x:Key`) styles for those control types, so every
+  instance in the app themes automatically; (2) giving `SettingsWindow` and
+  `BackgroundPickerWindow` the same custom `WindowChrome` title bar as
+  `MainWindow`. One deliberate exception: New Tab Page site tiles keep a
+  hardcoded white card with dark text regardless of theme (matches
+  Chrome/Edge/Safari — top-site favicons assume a light card), so those two
+  `TextBlock`s opt out of the new implicit dark-text default explicitly.
+
+## Recent fixes (previous round)
+
 - **About dialog crash** (`WebView2RuntimeNotFoundException`) — it called the
   parameterless `GetAvailableBrowserVersionString()`, which always looks for
   the system Evergreen Runtime instead of the bundled Fixed Version runtime

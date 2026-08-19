@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Windows;
+using RemiBrowser.Interop;
 using RemiBrowser.Models;
 using Microsoft.Win32;
 
@@ -13,6 +14,7 @@ namespace RemiBrowser.Views
         public BackgroundPickerWindow()
         {
             InitializeComponent();
+            Interop.WindowMaximizeFix.Apply(this);
 
             var current = App.Settings.Current.NewTabBackground;
             switch (current.Type)
@@ -79,5 +81,10 @@ namespace RemiBrowser.Views
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+
+        private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed) DragMove();
+        }
     }
 }

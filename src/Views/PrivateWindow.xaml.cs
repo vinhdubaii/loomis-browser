@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using RemiBrowser.Interop;
 using RemiBrowser.Models;
 
 namespace RemiBrowser.Views
@@ -16,28 +17,8 @@ namespace RemiBrowser.Views
         public PrivateWindow()
         {
             InitializeComponent();
-            StateChanged += (_, _) => UpdateRootGridMarginForWindowState();
-            UpdateRootGridMarginForWindowState();
+            Interop.WindowMaximizeFix.Apply(this);
             _ = InitializeAsync();
-        }
-
-        private void UpdateRootGridMarginForWindowState()
-        {
-            // Same WindowChrome maximize-overscan fix as MainWindow — see there for details.
-            if (WindowState == WindowState.Maximized)
-            {
-                var resizeBorder = SystemParameters.WindowResizeBorderThickness;
-                var frame = SystemParameters.WindowNonClientFrameThickness;
-                RootGrid.Margin = new Thickness(
-                    resizeBorder.Left + frame.Left,
-                    resizeBorder.Top + frame.Top,
-                    resizeBorder.Right + frame.Right,
-                    resizeBorder.Bottom + frame.Bottom);
-            }
-            else
-            {
-                RootGrid.Margin = new Thickness(0);
-            }
         }
 
         private async System.Threading.Tasks.Task InitializeAsync()
