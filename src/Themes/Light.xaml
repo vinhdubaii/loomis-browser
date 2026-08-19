@@ -13,6 +13,12 @@
     <Color x:Key="SurfaceAltColor">#E7E7EA</Color>
     <Color x:Key="SidebarSelectedColor">#DCE9FB</Color>
 
+    <!-- Address bar pill background: semi-transparent so a Custom Themes
+         gradient behind the toolbar shows through softly, while staying
+         light enough that dark text on top of it always stays legible
+         regardless of what color is behind it. -->
+    <Color x:Key="AddressPillOverlayColor">#CCFFFFFF</Color>
+
     <SolidColorBrush x:Key="ChromeBackgroundBrush" Color="{StaticResource ChromeBackgroundColor}"/>
     <SolidColorBrush x:Key="ChromeBorderBrush" Color="{StaticResource ChromeBorderColor}"/>
     <SolidColorBrush x:Key="TabActiveBrush" Color="{StaticResource TabActiveColor}"/>
@@ -23,5 +29,6 @@
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
     <SolidColorBrush x:Key="SurfaceAltBrush" Color="{StaticResource SurfaceAltColor}"/>
     <SolidColorBrush x:Key="SidebarSelectedBrush" Color="{StaticResource SidebarSelectedColor}"/>
+    <SolidColorBrush x:Key="AddressPillOverlayBrush" Color="{StaticResource AddressPillOverlayColor}"/>
 
 </ResourceDictionary>

@@ -71,6 +71,29 @@ namespace RemiBrowser.Models
         public bool IsMaximized { get; set; } = false;
     }
 
+    /// <summary>One draggable color stop on the Custom Themes gradient canvas.</summary>
+    public class GradientColorStop
+    {
+        /// <summary>0.0–1.0, relative to canvas width.</summary>
+        public double X { get; set; }
+
+        /// <summary>0.0–1.0, relative to canvas height.</summary>
+        public double Y { get; set; }
+
+        public string Hex { get; set; } = "#000000";
+    }
+
+    /// <summary>
+    /// Zen Browser-inspired custom toolbar/tab-strip gradient. Default OFF.
+    /// Max 3 stops — see GradientThemeService for how 1/2/3 stops render.
+    /// </summary>
+    public class CustomThemeSettings
+    {
+        public bool IsEnabled { get; set; } = false;
+
+        public List<GradientColorStop> ColorStops { get; set; } = new();
+    }
+
     /// <summary>
     /// Root of settings.json. Persisted via SettingsService. Keep this a plain
     /// data object (no logic) so it serializes cleanly with System.Text.Json.
@@ -86,6 +109,7 @@ namespace RemiBrowser.Models
         public bool ShowBookmarkBar { get; set; } = false;
         public AppTheme Theme { get; set; } = AppTheme.System;
         public NewTabBackgroundSettings NewTabBackground { get; set; } = new();
+        public CustomThemeSettings CustomTheme { get; set; } = new();
 
         // Privacy & Security
         public SecureDnsSettings SecureDns { get; set; } = new();

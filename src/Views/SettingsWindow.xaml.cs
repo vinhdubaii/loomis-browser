@@ -30,7 +30,7 @@ namespace RemiBrowser.Views
             InitializeComponent();
             Interop.WindowMaximizeFix.Apply(this);
 
-            _allPanels = new List<StackPanel> { PanelGeneral, PanelAppearance, PanelPrivacy, PanelDownloads, PanelAbout };
+            _allPanels = new List<StackPanel> { PanelGeneral, PanelAppearance, PanelPrivacy, PanelDownloads, PanelCustomThemes, PanelAbout };
             _allFieldGroups = _allPanels.SelectMany(p => p.Children.OfType<Border>()).ToList();
 
             LoadFromSettings();
@@ -75,6 +75,9 @@ namespace RemiBrowser.Views
             AskWhereToSaveCheck.IsChecked = s.Downloads.AskWhereToSaveEachFile;
             ShowDownloadsWhenDoneCheck.IsChecked = s.Downloads.ShowDownloadsWhenDone;
 
+            CustomThemeEnabledCheck.IsChecked = s.CustomTheme.IsEnabled;
+            GradientCanvas.LoadStops(s.CustomTheme.ColorStops);
+
             AboutText.Text = $"Remi Browser {App.Updates.CurrentVersion}\n" +
                               "Open source (MIT License) — github.com/vinhdubaii/remi-browser";
         }
@@ -108,6 +111,7 @@ namespace RemiBrowser.Views
                 _ when ReferenceEquals(sender, NavAppearance) => PanelAppearance,
                 _ when ReferenceEquals(sender, NavPrivacy) => PanelPrivacy,
                 _ when ReferenceEquals(sender, NavDownloads) => PanelDownloads,
+                _ when ReferenceEquals(sender, NavCustomThemes) => PanelCustomThemes,
                 _ when ReferenceEquals(sender, NavAbout) => PanelAbout,
                 _ => PanelGeneral
             });
@@ -210,6 +214,9 @@ namespace RemiBrowser.Views
             s.Downloads.Location = DownloadLocationBox.Text;
             s.Downloads.AskWhereToSaveEachFile = AskWhereToSaveCheck.IsChecked == true;
             s.Downloads.ShowDownloadsWhenDone = ShowDownloadsWhenDoneCheck.IsChecked == true;
+
+            s.CustomTheme.IsEnabled = CustomThemeEnabledCheck.IsChecked == true;
+            s.CustomTheme.ColorStops = GradientCanvas.ColorStops;
 
             await App.Settings.SaveAsync();
 

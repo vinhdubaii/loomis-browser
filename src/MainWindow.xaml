@@ -26,7 +26,7 @@
         </Grid.RowDefinitions>
 
         <!-- ============================= Row 0: Toolbar / custom title bar ============================= -->
-        <Grid Grid.Row="0" Height="44" Background="{DynamicResource ChromeBackgroundBrush}"
+        <Grid x:Name="ToolbarRow" Grid.Row="0" Height="44" Background="{DynamicResource ChromeBackgroundBrush}"
               MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/> <!-- nav buttons -->
@@ -47,8 +47,12 @@
                         ToolTip="New Tab (Ctrl+T)" Content="＋"/>
             </StackPanel>
 
-            <!-- Address bar: pill shape, lock + text + star inline -->
-            <Border Grid.Column="1" Background="#E7E7EA" CornerRadius="16" Height="32"
+            <!-- Address bar: pill shape, lock + text + star inline. Background is a
+                 semi-transparent themed overlay (not a hardcoded color) so a Custom
+                 Themes gradient behind the toolbar shows through softly while typed
+                 text stays legible in both Light and Dark mode — see
+                 Themes/Light.xaml + Dark.xaml's AddressPillOverlayBrush. -->
+            <Border Grid.Column="1" Background="{DynamicResource AddressPillOverlayBrush}" CornerRadius="16" Height="32"
                     Margin="8,0" VerticalAlignment="Center">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -90,7 +94,7 @@
         </Grid>
 
         <!-- ============================= Row 1: Tab strip (visible only when >= 2 tabs) ============================= -->
-        <Border Grid.Row="1" Background="{DynamicResource ChromeBackgroundBrush}"
+        <Border x:Name="TabStripBorder" Grid.Row="1" Background="{DynamicResource ChromeBackgroundBrush}"
                 BorderBrush="{DynamicResource ChromeBorderBrush}" BorderThickness="0,0,0,1">
             <ItemsControl x:Name="TabStripItems" Height="34">
                 <ItemsControl.ItemsPanel>

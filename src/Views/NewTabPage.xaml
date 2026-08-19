@@ -33,7 +33,9 @@
         <Button x:Name="CustomizeButton" Content="🎨 Customize"
                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Margin="0,0,20,20" Padding="10,6"
-                Background="#E7E7EA" BorderThickness="0" Cursor="Hand"
+                Background="{DynamicResource SurfaceAltBrush}"
+                Foreground="{DynamicResource TextPrimaryBrush}"
+                BorderThickness="0" Cursor="Hand"
                 Click="CustomizeButton_Click"/>
     </Grid>
 </UserControl>

@@ -13,6 +13,10 @@
     <Color x:Key="SurfaceAltColor">#3A3A40</Color>
     <Color x:Key="SidebarSelectedColor">#2E4A6E</Color>
 
+    <!-- Dark counterpart of the Light overlay above — dark and translucent,
+         instead of light and translucent, so white text stays legible. -->
+    <Color x:Key="AddressPillOverlayColor">#CC1C1C20</Color>
+
     <SolidColorBrush x:Key="ChromeBackgroundBrush" Color="{StaticResource ChromeBackgroundColor}"/>
     <SolidColorBrush x:Key="ChromeBorderBrush" Color="{StaticResource ChromeBorderColor}"/>
     <SolidColorBrush x:Key="TabActiveBrush" Color="{StaticResource TabActiveColor}"/>
@@ -23,5 +27,6 @@
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
     <SolidColorBrush x:Key="SurfaceAltBrush" Color="{StaticResource SurfaceAltColor}"/>
     <SolidColorBrush x:Key="SidebarSelectedBrush" Color="{StaticResource SidebarSelectedColor}"/>
+    <SolidColorBrush x:Key="AddressPillOverlayBrush" Color="{StaticResource AddressPillOverlayColor}"/>
 
 </ResourceDictionary>

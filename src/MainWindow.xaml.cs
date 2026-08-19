@@ -41,8 +41,42 @@ namespace RemiBrowser
             LibraryPanelControl.CloseRequested += (_, _) => LibraryPanelControl.Visibility = Visibility.Collapsed;
 
             RebuildBookmarkBar();
+            ApplyCustomThemeBackground();
 
             _ = CreateNewTabAsync();
+        }
+
+        // ============================= Custom Themes (gradient toolbar/tab strip) =============================
+
+        /// <summary>
+        /// Applies (or clears) the Custom Themes gradient on the toolbar (Row 0)
+        /// and tab strip (Row 1). When the gradient is off/empty, SetResourceReference
+        /// restores the normal DynamicResource-style binding to ChromeBackgroundBrush
+        /// (rather than just grabbing its current color once), so the toolbar keeps
+        /// re-coloring automatically on future Light/Dark/System theme changes —
+        /// exactly like it did before Custom Themes existed.
+        /// </summary>
+        private void ApplyCustomThemeBackground()
+        {
+            var gradient = Services.GradientThemeService.BuildBackgroundBrush(App.Settings.Current.CustomTheme);
+
+            if (gradient != null)
+            {
+                ToolbarRow.Background = gradient;
+                TabStripBorder.Background = gradient;
+            }
+            else
+            {
+                // Grid's Background is Panel.BackgroundProperty; Border's is its own
+                // Border.BackgroundProperty — these are two distinct DependencyProperty
+                // registrations that happen to share the name "Background", so each
+                // must be passed explicitly (an unqualified BackgroundProperty would
+                // resolve to Control.BackgroundProperty via this class's own Window
+                // base type, which neither Grid nor Border is registered against, and
+                // would throw at runtime).
+                ToolbarRow.SetResourceReference(Panel.BackgroundProperty, "ChromeBackgroundBrush");
+                TabStripBorder.SetResourceReference(Border.BackgroundProperty, "ChromeBackgroundBrush");
+            }
         }
 
         // ============================= Tab management =============================
@@ -167,7 +201,7 @@ namespace RemiBrowser
         private void RebuildTabStrip()
         {
             TabStripItems.Items.Clear();
-            ((Border)TabStripItems.Parent).Visibility =
+            TabStripBorder.Visibility =
                 Tabs.Count >= 2 ? Visibility.Visible : Visibility.Collapsed;
 
             foreach (var tab in Tabs)
@@ -316,7 +350,12 @@ namespace RemiBrowser
             menu.Items.Add(MenuItem("Print...", "Ctrl+P", (_, _) => _activeTab?.WebView.CoreWebView2.ShowPrintUI()));
             menu.Items.Add(new Separator());
 
-            menu.Items.Add(MenuItem("Settings", null, (_, _) => new SettingsWindow { Owner = this }.ShowDialog()));
+            menu.Items.Add(MenuItem("Settings", null, (_, _) =>
+            {
+                var settingsWindow = new SettingsWindow { Owner = this };
+                if (settingsWindow.ShowDialog() == true)
+                    ApplyCustomThemeBackground();
+            }));
             menu.Items.Add(MenuItem("About Remi Browser", null, (_, _) => ShowAbout()));
             menu.Items.Add(new Separator());
 
