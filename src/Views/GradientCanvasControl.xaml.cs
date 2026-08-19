@@ -95,6 +95,9 @@ namespace RemiBrowser.Views
             UpdateAddButtonState();
         }
 
+        private static ControlTemplate? _sharedDotTemplate;
+        private static ControlTemplate SharedDotTemplate => _sharedDotTemplate ??= BuildDotTemplate();
+
         private void AddThumbForStop(GradientColorStop stop)
         {
             var isSelected = ReferenceEquals(stop, _selectedStop);
@@ -106,8 +109,9 @@ namespace RemiBrowser.Views
                 Height = size,
                 Cursor = Cursors.SizeAll,
                 Background = SafeBrush(stop.Hex),
-                Template = BuildDotTemplate(isSelected)
+                Template = SharedDotTemplate
             };
+            SetIsSelectedStop(thumb, isSelected);
 
             PositionThumb(thumb, stop);
 
@@ -157,31 +161,55 @@ namespace RemiBrowser.Views
         }
 
         /// <summary>
-        /// A Thumb's default look has no built-in "colored circle" — this builds a
-        /// minimal template that just paints an Ellipse from the Thumb's own
-        /// Background (set per-instance to that stop's color), with a thicker
-        /// accent-colored ring when selected. The selection ring's color is a
-        /// one-time snapshot of the current theme's AccentBrush rather than a
-        /// live DynamicResource binding — an accepted, minor limitation for this
-        /// Settings-only editor control (see TASKS.md notes on scope).
+        /// A Thumb's default look has no built-in "colored circle" — this builds
+        /// the (single, shared) template that paints an Ellipse from the Thumb's
+        /// own Background (set per-instance to that stop's color), with a
+        /// thicker accent-colored ring when IsSelectedStop is true.
+        ///
+        /// Built ONCE and reused for every Thumb, rather than rebuilt per
+        /// selection change: reassigning a Thumb's Template destroys and
+        /// recreates its visual tree (the Ellipse), and doing that from
+        /// PreviewMouseLeftButtonDown — i.e. mid-dispatch of the very mouse-down
+        /// that's supposed to lead into Thumb's own drag-start logic — silently
+        /// broke every drag gesture before it could begin (WPF had already
+        /// computed the event's bubble route through the now-destroyed Ellipse).
+        /// Selection is instead communicated via the IsSelectedStop attached
+        /// property, which the template below reacts to purely through a
+        /// Trigger — a plain dependency-property value change, never touching
+        /// the visual tree, so it's always safe to set at any point, including
+        /// mid-drag.
         /// </summary>
-        private ControlTemplate BuildDotTemplate(bool isSelected)
+        private static ControlTemplate BuildDotTemplate()
         {
             var template = new ControlTemplate(typeof(Thumb));
 
             var ellipseFactory = new FrameworkElementFactory(typeof(Ellipse));
+            ellipseFactory.Name = "Dot";
             // Bound by property name (string), not nameof(Thumb.Background), since
             // FrameworkElementFactory bindings are resolved at template-apply time
             // against whatever the TemplatedParent turns out to be (a Thumb here).
             ellipseFactory.SetBinding(Shape.FillProperty,
                 new Binding("Background") { RelativeSource = RelativeSource.TemplatedParent });
-            ellipseFactory.SetValue(Shape.StrokeProperty,
-                isSelected ? (Brush)FindResource("AccentBrush") : Brushes.White);
-            ellipseFactory.SetValue(Shape.StrokeThicknessProperty, isSelected ? 3.0 : 2.0);
+            ellipseFactory.SetValue(Shape.StrokeProperty, Brushes.White);
+            ellipseFactory.SetValue(Shape.StrokeThicknessProperty, 2.0);
 
             template.VisualTree = ellipseFactory;
+
+            var selectedTrigger = new Trigger { Property = IsSelectedStopProperty, Value = true };
+            selectedTrigger.Setters.Add(new Setter(Shape.StrokeProperty, new DynamicResourceExtension("AccentBrush"), "Dot"));
+            selectedTrigger.Setters.Add(new Setter(Shape.StrokeThicknessProperty, 3.0, "Dot"));
+            template.Triggers.Add(selectedTrigger);
+
             return template;
         }
+
+        /// <summary>Attached property a Thumb's own ControlTemplate trigger reacts to (see BuildDotTemplate) — set via SetIsSelectedStop, never touching the Thumb's visual tree.</summary>
+        public static readonly DependencyProperty IsSelectedStopProperty =
+            DependencyProperty.RegisterAttached("IsSelectedStop", typeof(bool), typeof(GradientCanvasControl),
+                new FrameworkPropertyMetadata(false));
+
+        public static bool GetIsSelectedStop(DependencyObject obj) => (bool)obj.GetValue(IsSelectedStopProperty);
+        public static void SetIsSelectedStop(DependencyObject obj, bool value) => obj.SetValue(IsSelectedStopProperty, value);
 
         // ============================= Add / remove / select =============================
 
@@ -222,23 +250,26 @@ namespace RemiBrowser.Views
         private void SelectStop(GradientColorStop stop)
         {
             _selectedStop = stop;
-            // Deliberately NOT calling RebuildCanvas() here: this fires from
-            // PreviewMouseLeftButtonDown, i.e. before Thumb's own drag-start
-            // logic runs on the bubbling MouseLeftButtonDown. Recreating every
-            // Thumb at this point (the old RebuildCanvas() approach) destroyed
-            // the very Thumb WPF was about to capture the mouse on, silently
-            // breaking every drag gesture before it could start — that was the
-            // root cause of the dots being "locked"/undraggable. This just
-            // restyles the existing Thumbs in place instead.
+            // Fires from PreviewMouseLeftButtonDown, i.e. mid-dispatch of the
+            // very mouse-down that's about to lead into Thumb's own drag-start
+            // logic on the bubbling MouseLeftButtonDown. RefreshThumbSelectionVisuals
+            // only changes plain property values (never Template/visual tree),
+            // which is what makes it safe to call from here — see its own doc
+            // comment and BuildDotTemplate's for the two earlier approaches that
+            // silently broke every drag gesture before it could start.
             RefreshThumbSelectionVisuals();
             ShowEditorFor(stop);
         }
 
         /// <summary>
         /// Re-applies the selected/unselected look (size + ring) to every
-        /// existing Thumb without removing/recreating any of them, so an
-        /// in-progress drag (which depends on the exact Thumb instance WPF
-        /// captured the mouse on) is never disturbed by a selection change.
+        /// existing Thumb without touching any Thumb's Template or removing/
+        /// recreating any of them — only plain dependency-property value
+        /// changes (Width, Height, the IsSelectedStop attached property that
+        /// drives the shared template's Trigger). Safe to call at any point,
+        /// including mid-dispatch of the very PreviewMouseLeftButtonDown that's
+        /// about to lead into Thumb's own drag-start logic — see BuildDotTemplate's
+        /// doc comment for why a Template swap here previously broke dragging.
         /// </summary>
         private void RefreshThumbSelectionVisuals()
         {
@@ -254,7 +285,7 @@ namespace RemiBrowser.Views
 
                 thumb.Width = size;
                 thumb.Height = size;
-                thumb.Template = BuildDotTemplate(isSelected);
+                SetIsSelectedStop(thumb, isSelected);
 
                 Canvas.SetLeft(thumb, centerX - size / 2);
                 Canvas.SetTop(thumb, centerY - size / 2);
@@ -281,7 +312,8 @@ namespace RemiBrowser.Views
         }
 
         private void ApplyColorToSelectedStop(string hex)
-        {            if (_selectedStop == null) return;
+        {
+            if (_selectedStop == null) return;
 
             _selectedStop.Hex = hex;
             _suppressHexBoxHandler = true;
