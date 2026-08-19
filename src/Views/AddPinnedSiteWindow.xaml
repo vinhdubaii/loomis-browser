@@ -1,7 +1,7 @@
 <Window x:Class="RemiBrowser.Views.AddPinnedSiteWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Add Pinned Site" Height="220" Width="340"
+        Title="Add Pinned Site" Width="340" SizeToContent="Height"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         WindowStyle="None"
         Background="{DynamicResource ChromeBackgroundBrush}">

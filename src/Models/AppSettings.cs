@@ -64,19 +64,6 @@ namespace RemiBrowser.Models
         public double OverlayOpacity { get; set; } = 0.3;
     }
 
-    /// <summary>
-    /// New Tab Page grid layout + section visibility. Columns auto-wraps rows —
-    /// only the column count is user-configurable, matching Chrome/Edge.
-    /// </summary>
-    public class NewTabLayoutSettings
-    {
-        /// <summary>2–8. Rows are never fixed; they just wrap based on item count.</summary>
-        public int Columns { get; set; } = 4;
-
-        public bool ShowPinnedSites { get; set; } = true;
-        public bool ShowRecentlyVisited { get; set; } = true;
-    }
-
     public class WindowSettings
     {
         public double Width { get; set; } = 1280;
@@ -122,7 +109,6 @@ namespace RemiBrowser.Models
         public bool ShowBookmarkBar { get; set; } = false;
         public AppTheme Theme { get; set; } = AppTheme.System;
         public NewTabBackgroundSettings NewTabBackground { get; set; } = new();
-        public NewTabLayoutSettings NewTabLayout { get; set; } = new();
         public CustomThemeSettings CustomTheme { get; set; } = new();
 
         // Privacy & Security

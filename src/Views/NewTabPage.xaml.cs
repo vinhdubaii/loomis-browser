@@ -55,12 +55,12 @@ namespace RemiBrowser.Views
                 : new System.Collections.Generic.List<TopSiteItem>();
 
             PinnedGrid.Items.Clear();
+            if (layout.ShowPinnedSites)
+                PinnedGrid.Items.Add(BuildAddTile());
             foreach (var site in pinned)
                 PinnedGrid.Items.Add(BuildTile(site));
 
             RecentGrid.Items.Clear();
-            if (layout.ShowPinnedSites)
-                RecentGrid.Items.Add(BuildAddTile());
             foreach (var site in recent)
                 RecentGrid.Items.Add(BuildTile(site));
 

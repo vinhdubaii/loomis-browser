@@ -189,6 +189,12 @@ namespace RemiBrowser.Views
         {
             if (ColorStops.Count >= MaxStops) return;
 
+            var picker = new ColorPickerWindow(PresetColors[ColorStops.Count % PresetColors.Length])
+            {
+                Owner = Window.GetWindow(this)
+            };
+            if (picker.ShowDialog() != true) return; // Cancel — don't add a stop at all
+
             var (x, y) = ColorStops.Count switch
             {
                 0 => (0.5, 0.5),
@@ -196,7 +202,7 @@ namespace RemiBrowser.Views
                 _ => (0.78, 0.7)
             };
 
-            var stop = new GradientColorStop { X = x, Y = y, Hex = PresetColors[ColorStops.Count % PresetColors.Length] };
+            var stop = new GradientColorStop { X = x, Y = y, Hex = picker.SelectedHex };
             ColorStops.Add(stop);
             _selectedStop = stop;
             RebuildCanvas();
@@ -216,8 +222,43 @@ namespace RemiBrowser.Views
         private void SelectStop(GradientColorStop stop)
         {
             _selectedStop = stop;
-            RebuildCanvas(); // re-render so the newly selected thumb gets its ring
+            // Deliberately NOT calling RebuildCanvas() here: this fires from
+            // PreviewMouseLeftButtonDown, i.e. before Thumb's own drag-start
+            // logic runs on the bubbling MouseLeftButtonDown. Recreating every
+            // Thumb at this point (the old RebuildCanvas() approach) destroyed
+            // the very Thumb WPF was about to capture the mouse on, silently
+            // breaking every drag gesture before it could start — that was the
+            // root cause of the dots being "locked"/undraggable. This just
+            // restyles the existing Thumbs in place instead.
+            RefreshThumbSelectionVisuals();
             ShowEditorFor(stop);
+        }
+
+        /// <summary>
+        /// Re-applies the selected/unselected look (size + ring) to every
+        /// existing Thumb without removing/recreating any of them, so an
+        /// in-progress drag (which depends on the exact Thumb instance WPF
+        /// captured the mouse on) is never disturbed by a selection change.
+        /// </summary>
+        private void RefreshThumbSelectionVisuals()
+        {
+            foreach (var (stop, thumb) in _stopThumbs)
+            {
+                var isSelected = ReferenceEquals(stop, _selectedStop);
+                var size = isSelected ? 26.0 : 20.0;
+
+                // Resize around the thumb's current *center*, not its top-left,
+                // so selecting a stop doesn't visually nudge its position.
+                var centerX = Canvas.GetLeft(thumb) + thumb.Width / 2;
+                var centerY = Canvas.GetTop(thumb) + thumb.Height / 2;
+
+                thumb.Width = size;
+                thumb.Height = size;
+                thumb.Template = BuildDotTemplate(isSelected);
+
+                Canvas.SetLeft(thumb, centerX - size / 2);
+                Canvas.SetTop(thumb, centerY - size / 2);
+            }
         }
 
         private void ShowEditorFor(GradientColorStop stop)
@@ -230,9 +271,17 @@ namespace RemiBrowser.Views
 
         // ============================= Color editing =============================
 
-        private void ApplyColorToSelectedStop(string hex)
+        private void CustomColorButton_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedStop == null) return;
+
+            var picker = new ColorPickerWindow(_selectedStop.Hex) { Owner = Window.GetWindow(this) };
+            if (picker.ShowDialog() == true)
+                ApplyColorToSelectedStop(picker.SelectedHex);
+        }
+
+        private void ApplyColorToSelectedStop(string hex)
+        {            if (_selectedStop == null) return;
 
             _selectedStop.Hex = hex;
             _suppressHexBoxHandler = true;

@@ -33,9 +33,6 @@
 
             <StackPanel x:Name="SwatchRow" Orientation="Horizontal" Margin="0,0,0,10"/>
 
-            <Button x:Name="CustomColorButton" Content="Custom color..." HorizontalAlignment="Left"
-                    Padding="8,4" Margin="0,0,0,10" Click="CustomColorButton_Click"/>
-
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
