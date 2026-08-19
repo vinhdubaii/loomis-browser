@@ -12,6 +12,14 @@ namespace RemiBrowser.Models
 
         public bool IsBuiltIn { get; set; } = true;
 
+        /// <summary>
+        /// The custom ComboBox ControlTemplate in ControlStyles.xaml renders the closed
+        /// selection box via ContentPresenter bound to SelectionBoxItem, without going
+        /// through DisplayMemberPath. Overriding ToString() ensures the closed box shows
+        /// the engine's name instead of falling back to the fully-qualified type name.
+        /// </summary>
+        public override string ToString() => Name;
+
         public static SearchEngine[] Defaults => new[]
         {
             new SearchEngine { Name = "Google",     UrlTemplate = "https://www.google.com/search?q=%s",   Shortcut = "g" },
