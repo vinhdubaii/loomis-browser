@@ -17,6 +17,7 @@ namespace RemiBrowser
         public static SettingsService Settings { get; private set; } = null!;
         public static HistoryService History { get; private set; } = null!;
         public static BookmarkService Bookmarks { get; private set; } = null!;
+        public static PasswordVaultService Passwords { get; private set; } = null!;
         public static DownloadService Downloads { get; private set; } = null!;
         public static SearchEngineService SearchEngines { get; private set; } = null!;
         public static WebViewEnvironmentService WebViewEnvironments { get; private set; } = null!;
@@ -86,6 +87,9 @@ namespace RemiBrowser
                 Bookmarks = new BookmarkService(Path.Combine(AppDataFolder, "browser.db"));
                 await Bookmarks.InitializeAsync();
 
+                Passwords = new PasswordVaultService(Path.Combine(AppDataFolder, "browser.db"));
+                await Passwords.InitializeAsync();
+
                 SearchEngines = new SearchEngineService(Settings);
 
                 WebViewEnvironments = new WebViewEnvironmentService(AppDataFolder, Settings);
@@ -111,9 +115,16 @@ namespace RemiBrowser
             }
         }
 
+        /// <summary>
+        /// Settings are already saved properly (via await) in MainWindow_Closing
+        /// before Close() is called, so there's nothing left to do here. This is
+        /// intentionally empty rather than re-saving — a blocking
+        /// .GetAwaiter().GetResult() call here previously deadlocked the process
+        /// on exit (the awaited file write wants to resume on this same UI
+        /// thread, which is busy blocking on it).
+        /// </summary>
         protected override void OnExit(ExitEventArgs e)
         {
-            Settings.SaveAsync().GetAwaiter().GetResult();
             base.OnExit(e);
         }
     }

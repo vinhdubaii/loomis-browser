@@ -58,6 +58,7 @@ namespace RemiBrowser.Views
             try
             {
                 await BrowsingDataService.ClearAsync(_profile, kinds, range);
+                await BrowsingDataService.ClearVaultIfSelectedAsync(types);
                 StatusText.Text = "Done.";
                 await System.Threading.Tasks.Task.Delay(400);
                 Close();

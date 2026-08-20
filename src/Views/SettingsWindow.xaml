@@ -259,14 +259,14 @@
                         <TextBlock Text="Autofill and passwords" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
 
-                        <Border Tag="password manager passwords autofill save fill forms" Margin="0,0,0,10">
+                        <Border Tag="password manager passwords autofill save fill forms vault" Margin="0,0,0,10">
                             <StackPanel>
                                 <CheckBox x:Name="OfferSavePasswordsCheck" Content="Offer to save passwords" Margin="0,2"/>
-                                <CheckBox x:Name="AutofillEnabledCheck" Content="Save and fill addresses, payment methods, and other info" Margin="0,2"/>
+                                <CheckBox x:Name="AutofillEnabledCheck" Content="Autofill saved passwords (shows a key icon in password fields)" Margin="0,2"/>
                                 <Button x:Name="OpenPasswordManagerButton" Content="Open Password Manager..."
                                         HorizontalAlignment="Left" Padding="10,5" Margin="0,10,0,0"
                                         Click="OpenPasswordManagerButton_Click"/>
-                                <TextBlock Text="Passwords are stored in the browser engine's built-in password store, encrypted per Windows account. The button above opens the engine's own Password Manager page to view, search, or remove saved logins."
+                                <TextBlock Text="Passwords are saved in Remi's own vault, encrypted per Windows account with the same technology Chromium itself uses (DPAPI). The button above opens Password Manager to view, search, or remove saved logins — viewing a password requires re-entering your Windows account password."
                                            FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,0"
                                            TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left"/>
                             </StackPanel>

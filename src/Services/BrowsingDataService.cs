@@ -68,5 +68,19 @@ namespace RemiBrowser.Services
 
             return profile.ClearBrowsingDataAsync(kinds, start, DateTime.Now);
         }
+
+        /// <summary>
+        /// Wipes Remi's own password vault when the "Passwords" checkbox is
+        /// selected. Separate from ClearAsync's WebView2-layer clear above:
+        /// PasswordAutosave in BuildKinds targets Chromium's native store,
+        /// which this app no longer uses (see MainWindow.CreateNewTabAsync —
+        /// native autosave is always forced off, PasswordVaultService is the
+        /// real store now). Call this alongside ClearAsync, not instead of it,
+        /// so both checkboxes' full intent is honored.
+        /// </summary>
+        public static Task ClearVaultIfSelectedAsync(ClearBrowsingDataTypes types)
+        {
+            return types.Passwords ? App.Passwords.ClearAllAsync() : Task.CompletedTask;
+        }
     }
 }

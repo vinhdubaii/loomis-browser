@@ -137,6 +137,7 @@ namespace RemiBrowser
                         var kinds = Services.BrowsingDataService.BuildKinds(App.Settings.Current.ClearOnClose.Types);
                         await Services.BrowsingDataService.ClearAsync(profile, kinds, Services.BrowsingDataService.TimeRange.AllTime);
                     }
+                    await Services.BrowsingDataService.ClearVaultIfSelectedAsync(App.Settings.Current.ClearOnClose.Types);
                 }
                 catch
                 {
@@ -222,13 +223,18 @@ namespace RemiBrowser
             // it's the same underlying zoom, just driven by us instead of Chromium.
             tab.WebView.CoreWebView2.Settings.IsZoomControlEnabled = false;
 
-            // Passwords and autofill toggles live on the shared CoreWebView2Profile
-            // (same object for every normal tab), so re-applying it per tab is
-            // cheap and keeps a freshly created tab in sync even if the setting
-            // was changed in Settings after the app started.
-            var passwordSettings = App.Settings.Current.PasswordManager;
-            tab.WebView.CoreWebView2.Profile.IsPasswordAutosaveEnabled = passwordSettings.OfferToSavePasswords;
-            tab.WebView.CoreWebView2.Profile.IsGeneralAutofillEnabled = passwordSettings.AutofillEnabled;
+            // Remi's own password vault (PasswordVaultService) replaces WebView2/
+            // Chromium's built-in autosave entirely — that native store has no
+            // public API to list, view, or delete individual entries, so keeping
+            // it on alongside our own vault would just mean two separate,
+            // invisible-to-each-other systems both offering to save the same
+            // login. Always forced off here; the PasswordManager checkboxes in
+            // Settings now control Remi's own vault instead (OfferToSavePasswords
+            // gates the "Save password?" prompt, AutofillEnabled gates the
+            // click-to-fill icon) — see PasswordCaptureService.
+            tab.WebView.CoreWebView2.Profile.IsPasswordAutosaveEnabled = false;
+            tab.WebView.CoreWebView2.Profile.IsGeneralAutofillEnabled = false;
+            await Services.PasswordCaptureService.AttachAsync(tab.WebView.CoreWebView2, this);
 
             App.Downloads.Attach(tab.WebView.CoreWebView2);
 

@@ -405,13 +405,11 @@ namespace RemiBrowser.Views
             // Theme takes effect immediately — no restart needed, unlike Secure DNS.
             ThemeService.Apply(newTheme);
 
-            // Password/autofill toggles are live CoreWebView2Profile properties —
-            // apply immediately rather than waiting for a restart.
-            if (_activeProfile != null)
-            {
-                _activeProfile.IsPasswordAutosaveEnabled = s.PasswordManager.OfferToSavePasswords;
-                _activeProfile.IsGeneralAutofillEnabled = s.PasswordManager.AutofillEnabled;
-            }
+            // Password/autofill toggles now control Remi's own vault
+            // (PasswordCaptureService reads App.Settings.Current.PasswordManager
+            // live on every capture/autofill, no extra wiring needed here) —
+            // the native CoreWebView2Profile autosave is always forced off in
+            // MainWindow.CreateNewTabAsync, so it's deliberately not touched here.
 
             DialogResult = true;
         }

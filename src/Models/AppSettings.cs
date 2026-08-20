@@ -144,16 +144,19 @@ namespace RemiBrowser.Models
     }
 
     /// <summary>
-    /// "Passwords and autofill" section of Privacy &amp; Security. Both flags map
-    /// directly onto real CoreWebView2Profile properties (IsPasswordAutosaveEnabled
-    /// / IsGeneralAutofillEnabled) — WebView2 does not expose a public API to
-    /// list, view, or delete individual saved passwords/autofill entries from a
-    /// host app, so this settings page intentionally only offers on/off
-    /// switches rather than a fake "manage passwords" list.
+    /// "Passwords and autofill" section of Privacy &amp; Security. Controls
+    /// Remi's own password vault (PasswordVaultService/PasswordCaptureService)
+    /// — WebView2/Chromium's native autosave is always forced off (see
+    /// MainWindow.CreateNewTabAsync) since it has no public API to list, view,
+    /// or delete individual saved entries, which is exactly what this app's
+    /// own vault + Password Manager UI now provide instead.
     /// </summary>
     public class PasswordManagerSettings
     {
+        /// <summary>Whether a detected login shows the "Save password?" prompt.</summary>
         public bool OfferToSavePasswords { get; set; } = true;
+
+        /// <summary>Whether a saved match shows the click-to-fill key icon in password fields.</summary>
         public bool AutofillEnabled { get; set; } = true;
     }
 
