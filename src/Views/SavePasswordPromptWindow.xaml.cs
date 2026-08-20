@@ -46,8 +46,18 @@ namespace RemiBrowser.Views
             if (Owner == null) return;
 
             const double margin = 20;
+            const double gapBelowChrome = 6;
+
+            // Anchored top-right, just under the toolbar/tab strip/bookmark bar,
+            // matching where Chrome/Edge's own save-password bubble drops down
+            // from the address bar's lock icon. The previous version anchored to
+            // Owner.ActualHeight (the window's bottom edge) instead, which put it
+            // near the bottom of the screen when maximized, often partly off
+            // screen with its buttons clipped.
+            var chromeHeight = Owner is MainWindow mainWindow ? mainWindow.ChromeHeight : 0;
+
             Left = Owner.Left + Owner.ActualWidth - ActualWidth - margin;
-            Top = Owner.Top + Owner.ActualHeight - ActualHeight - margin;
+            Top = Owner.Top + chromeHeight + gapBelowChrome;
         }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -26,6 +26,19 @@ namespace RemiBrowser
         private WindowState _preFullScreenWindowState;
         private Rect _preFullScreenBounds;
 
+        /// <summary>
+        /// Total height of the toolbar + tab strip + bookmark bar currently
+        /// showing at the top of the window, in this window's own coordinate
+        /// space. Each row's ActualHeight is naturally 0 while collapsed (tab
+        /// strip below 2 tabs, bookmark bar toggled off in Settings), so this
+        /// always reflects whatever's actually visible right now without
+        /// needing to duplicate that visibility logic here. Used by dialogs
+        /// like SavePasswordPromptWindow to anchor themselves just below the
+        /// real chrome instead of guessing a fixed offset.
+        /// </summary>
+        public double ChromeHeight =>
+            ToolbarRow.ActualHeight + TabStripBorder.ActualHeight + BookmarkBarHost.ActualHeight;
+
         public MainWindow()
         {
             InitializeComponent();

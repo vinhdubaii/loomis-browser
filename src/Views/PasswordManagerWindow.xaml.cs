@@ -91,9 +91,6 @@ namespace RemiBrowser.Views
                 return;
             }
 
-            var reauth = new ReauthenticateWindow { Owner = this };
-            if (reauth.ShowDialog() != true) return;
-
             try
             {
                 row.RevealedPassword = PasswordVaultService.Decrypt(row.EncryptedPassword);
