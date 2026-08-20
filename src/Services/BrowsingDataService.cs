@@ -29,7 +29,7 @@ namespace RemiBrowser.Services
             CoreWebView2BrowsingDataKinds kinds = 0;
 
             if (types.History) kinds |= CoreWebView2BrowsingDataKinds.BrowsingHistory;
-            if (types.Cookies) kinds |= CoreWebView2BrowsingDataKinds.CookiesAndOtherSiteData;
+            if (types.Cookies) kinds |= CoreWebView2BrowsingDataKinds.Cookies;
 
             // "Cached images and files": DiskCache covers the HTTP cache;
             // CacheStorage covers the Cache Storage API used by service workers.
