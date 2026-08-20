@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Web.WebView2.Core;
 using RemiBrowser.Interop;
 using RemiBrowser.Models;
 using RemiBrowser.Services;
@@ -25,10 +26,29 @@ namespace RemiBrowser.Views
         private List<StackPanel> _allPanels = null!;
         private List<Border> _allFieldGroups = null!;
 
-        public SettingsWindow()
+        /// <summary>
+        /// The active tab's CoreWebView2.Profile, passed in from MainWindow so
+        /// "Delete browsing data..." can operate on the real normal-profile
+        /// store. Null when there's genuinely no tab yet (shouldn't happen in
+        /// practice — MainWindow always has at least one tab — but guarded
+        /// anyway so Settings never crashes over it).
+        /// </summary>
+        private readonly CoreWebView2Profile? _activeProfile;
+
+        /// <summary>Live URLs of every currently open normal tab, for "Use current pages".</summary>
+        private readonly IReadOnlyList<string> _currentTabUrls;
+
+        public SettingsWindow() : this(null, Array.Empty<string>())
+        {
+        }
+
+        public SettingsWindow(CoreWebView2Profile? activeProfile, IReadOnlyList<string> currentTabUrls)
         {
             InitializeComponent();
             Interop.WindowMaximizeFix.Apply(this);
+
+            _activeProfile = activeProfile;
+            _currentTabUrls = currentTabUrls;
 
             _allPanels = new List<StackPanel> { PanelGeneral, PanelAppearance, PanelPrivacy, PanelDownloads, PanelCustomThemes, PanelAbout };
             _allFieldGroups = _allPanels.SelectMany(p => p.Children.OfType<Border>()).ToList();
@@ -59,6 +79,22 @@ namespace RemiBrowser.Views
             SearchEngineCombo.ItemsSource = s.SearchEngines;
             SearchEngineCombo.SelectedItem = s.SearchEngines.FirstOrDefault(e => e.Name == s.DefaultSearchEngineName);
 
+            // ---- On startup ----
+            switch (s.Startup.Mode)
+            {
+                case StartupMode.Continue: StartupContinueOption.IsChecked = true; break;
+                case StartupMode.ContinueAndNewTab: StartupContinueAndNewTabOption.IsChecked = true; break;
+                case StartupMode.SpecificPages: StartupSpecificPagesOption.IsChecked = true; break;
+                default: StartupNewTabOption.IsChecked = true; break;
+            }
+            StartupPagesList.Items.Clear();
+            foreach (var page in s.Startup.Pages)
+                StartupPagesList.Items.Add(page);
+            UpdateStartupPagesPanelVisibility();
+
+            // ---- Default browser ----
+            RefreshDefaultBrowserStatus();
+
             ShowBookmarkBarCheck.IsChecked = s.ShowBookmarkBar;
             ThemeCombo.SelectedIndex = (int)s.Theme;
 
@@ -70,6 +106,20 @@ namespace RemiBrowser.Views
             }
             SelectComboItemByTag(DnsProviderCombo, s.SecureDns.Provider);
             DnsCustomTemplateBox.Text = s.SecureDns.CustomTemplate ?? string.Empty;
+
+            // ---- Passwords and autofill ----
+            OfferSavePasswordsCheck.IsChecked = s.PasswordManager.OfferToSavePasswords;
+            AutofillEnabledCheck.IsChecked = s.PasswordManager.AutofillEnabled;
+
+            // ---- Clear on close ----
+            ClearOnCloseCheck.IsChecked = s.ClearOnClose.Enabled;
+            ClearOnCloseHistoryCheck.IsChecked = s.ClearOnClose.Types.History;
+            ClearOnCloseCookiesCheck.IsChecked = s.ClearOnClose.Types.Cookies;
+            ClearOnCloseCacheCheck.IsChecked = s.ClearOnClose.Types.Cache;
+            ClearOnCloseDownloadHistoryCheck.IsChecked = s.ClearOnClose.Types.DownloadHistory;
+            ClearOnCloseAutofillCheck.IsChecked = s.ClearOnClose.Types.AutofillData;
+            ClearOnClosePasswordsCheck.IsChecked = s.ClearOnClose.Types.Passwords;
+            UpdateClearOnClosePanelVisibility();
 
             DownloadLocationBox.Text = s.Downloads.Location;
             AskWhereToSaveCheck.IsChecked = s.Downloads.AskWhereToSaveEachFile;
@@ -164,6 +214,110 @@ namespace RemiBrowser.Views
 
         // ============================= Field handlers =============================
 
+        // ============================= On startup =============================
+
+        private void StartupOption_Checked(object sender, RoutedEventArgs e) => UpdateStartupPagesPanelVisibility();
+
+        private void UpdateStartupPagesPanelVisibility()
+        {
+            // Guard: this can fire from XAML during InitializeComponent(), before
+            // StartupPagesPanel itself has been assigned yet (same pattern as
+            // Nav_Checked's _allPanels guard above).
+            if (StartupPagesPanel == null) return;
+
+            StartupPagesPanel.Visibility = StartupSpecificPagesOption.IsChecked == true
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        private void AddStartupPageButton_Click(object sender, RoutedEventArgs e) => AddStartupPageFromTextBox();
+
+        private void StartupPageUrlBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+                AddStartupPageFromTextBox();
+        }
+
+        private void AddStartupPageFromTextBox()
+        {
+            var url = StartupPageUrlBox.Text.Trim();
+            if (string.IsNullOrEmpty(url)) return;
+
+            if (!url.Contains("://"))
+                url = "https://" + url;
+
+            StartupPagesList.Items.Add(url);
+            StartupPageUrlBox.Text = string.Empty;
+        }
+
+        private void RemoveStartupPageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (StartupPagesList.SelectedItem != null)
+                StartupPagesList.Items.Remove(StartupPagesList.SelectedItem);
+        }
+
+        private void UseCurrentPagesButton_Click(object sender, RoutedEventArgs e)
+        {
+            StartupPagesList.Items.Clear();
+            foreach (var url in _currentTabUrls)
+            {
+                if (!string.IsNullOrWhiteSpace(url) && url != "about:newtab")
+                    StartupPagesList.Items.Add(url);
+            }
+        }
+
+        // ============================= Default browser =============================
+
+        private void RefreshDefaultBrowserStatus()
+        {
+            var isDefault = DefaultBrowserService.IsDefaultBrowser();
+
+            DefaultBrowserStatusText.Text = isDefault
+                ? "✓ Remi is your default browser."
+                : "Remi is not currently your default browser.";
+
+            MakeDefaultButton.Visibility = isDefault ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void MakeDefaultButton_Click(object sender, RoutedEventArgs e)
+        {
+            DefaultBrowserService.OpenDefaultAppsSettings();
+        }
+
+        /// <summary>
+        /// The user picks the default browser in the separate Windows Settings
+        /// app, then comes back here — re-check status whenever this window
+        /// regains focus so the checkmark updates without needing to reopen
+        /// Settings entirely.
+        /// </summary>
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (IsLoaded) RefreshDefaultBrowserStatus();
+        }
+
+        // ============================= Passwords / Delete browsing data / Clear on close =============================
+
+        private void DeleteBrowsingDataButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_activeProfile == null)
+            {
+                MessageBox.Show("No active browsing profile is available right now.", "Delete browsing data");
+                return;
+            }
+
+            var dialog = new DeleteBrowsingDataDialog(_activeProfile) { Owner = this };
+            dialog.ShowDialog();
+        }
+
+        private void ClearOnCloseCheck_CheckedChanged(object sender, RoutedEventArgs e) => UpdateClearOnClosePanelVisibility();
+
+        private void UpdateClearOnClosePanelVisibility()
+        {
+            if (ClearOnClosePanel == null) return;
+            ClearOnClosePanel.Visibility = ClearOnCloseCheck.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         private void ManageEnginesButton_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(
@@ -198,6 +352,13 @@ namespace RemiBrowser.Views
             if (SearchEngineCombo.SelectedItem is SearchEngine engine)
                 s.DefaultSearchEngineName = engine.Name;
 
+            // ---- On startup ----
+            s.Startup.Mode = StartupContinueOption.IsChecked == true ? StartupMode.Continue
+                : StartupContinueAndNewTabOption.IsChecked == true ? StartupMode.ContinueAndNewTab
+                : StartupSpecificPagesOption.IsChecked == true ? StartupMode.SpecificPages
+                : StartupMode.NewTab;
+            s.Startup.Pages = StartupPagesList.Items.Cast<string>().ToList();
+
             s.ShowBookmarkBar = ShowBookmarkBarCheck.IsChecked == true;
 
             var newTheme = (AppTheme)ThemeCombo.SelectedIndex;
@@ -211,6 +372,19 @@ namespace RemiBrowser.Views
                 s.SecureDns.Provider = tag;
             s.SecureDns.CustomTemplate = DnsCustomTemplateBox.Text.Trim();
 
+            // ---- Passwords and autofill ----
+            s.PasswordManager.OfferToSavePasswords = OfferSavePasswordsCheck.IsChecked == true;
+            s.PasswordManager.AutofillEnabled = AutofillEnabledCheck.IsChecked == true;
+
+            // ---- Clear on close ----
+            s.ClearOnClose.Enabled = ClearOnCloseCheck.IsChecked == true;
+            s.ClearOnClose.Types.History = ClearOnCloseHistoryCheck.IsChecked == true;
+            s.ClearOnClose.Types.Cookies = ClearOnCloseCookiesCheck.IsChecked == true;
+            s.ClearOnClose.Types.Cache = ClearOnCloseCacheCheck.IsChecked == true;
+            s.ClearOnClose.Types.DownloadHistory = ClearOnCloseDownloadHistoryCheck.IsChecked == true;
+            s.ClearOnClose.Types.AutofillData = ClearOnCloseAutofillCheck.IsChecked == true;
+            s.ClearOnClose.Types.Passwords = ClearOnClosePasswordsCheck.IsChecked == true;
+
             s.Downloads.Location = DownloadLocationBox.Text;
             s.Downloads.AskWhereToSaveEachFile = AskWhereToSaveCheck.IsChecked == true;
             s.Downloads.ShowDownloadsWhenDone = ShowDownloadsWhenDoneCheck.IsChecked == true;
@@ -222,6 +396,14 @@ namespace RemiBrowser.Views
 
             // Theme takes effect immediately — no restart needed, unlike Secure DNS.
             ThemeService.Apply(newTheme);
+
+            // Password/autofill toggles are live CoreWebView2Profile properties —
+            // apply immediately rather than waiting for a restart.
+            if (_activeProfile != null)
+            {
+                _activeProfile.IsPasswordAutosaveEnabled = s.PasswordManager.OfferToSavePasswords;
+                _activeProfile.IsGeneralAutofillEnabled = s.PasswordManager.AutofillEnabled;
+            }
 
             DialogResult = true;
         }

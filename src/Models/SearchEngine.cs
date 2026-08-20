@@ -12,14 +12,6 @@ namespace RemiBrowser.Models
 
         public bool IsBuiltIn { get; set; } = true;
 
-        /// <summary>
-        /// The custom ComboBox ControlTemplate in ControlStyles.xaml renders the closed
-        /// selection box via ContentPresenter bound to SelectionBoxItem, without going
-        /// through DisplayMemberPath. Overriding ToString() ensures the closed box shows
-        /// the engine's name instead of falling back to the fully-qualified type name.
-        /// </summary>
-        public override string ToString() => Name;
-
         public static SearchEngine[] Defaults => new[]
         {
             new SearchEngine { Name = "Google",     UrlTemplate = "https://www.google.com/search?q=%s",   Shortcut = "g" },
@@ -27,5 +19,18 @@ namespace RemiBrowser.Models
             new SearchEngine { Name = "DuckDuckGo", UrlTemplate = "https://duckduckgo.com/?q=%s",         Shortcut = "d" },
             new SearchEngine { Name = "Cốc Cốc",    UrlTemplate = "https://coccoc.com/search?query=%s",   Shortcut = "c" },
         };
+
+        /// <summary>
+        /// Without this, a ComboBox bound directly to List&lt;SearchEngine&gt; (as
+        /// SettingsWindow's SearchEngineCombo is) falls back to the default
+        /// object.ToString() for its closed-state SelectionBoxItem even though
+        /// DisplayMemberPath="Name" is set — a known WPF quirk with custom
+        /// ComboBox ControlTemplates (see ControlStyles.xaml). That fallback
+        /// printed the fully-qualified type name ("RemiBrowser.Models.SearchEngine")
+        /// instead of the engine's Name. Overriding ToString() fixes it regardless
+        /// of which code path WPF takes, and is harmless everywhere else since
+        /// nothing else in the app calls ToString() on a SearchEngine.
+        /// </summary>
+        public override string ToString() => Name;
     }
 }

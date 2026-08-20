@@ -43,7 +43,103 @@ namespace RemiBrowser
             RebuildBookmarkBar();
             ApplyCustomThemeBackground();
 
-            _ = CreateNewTabAsync();
+            Closing += MainWindow_Closing;
+
+            _ = InitializeStartupTabsAsync();
+        }
+
+        // ============================= Startup / session =============================
+
+        /// <summary>
+        /// Opens the initial set of tabs according to Settings.Startup.Mode
+        /// (General settings, Chromium-style "On startup" section). Falls back
+        /// to a single New Tab page whenever the configured mode has nothing to
+        /// restore (e.g. first-ever launch, or "Specific pages" with an empty list).
+        /// </summary>
+        private async System.Threading.Tasks.Task InitializeStartupTabsAsync()
+        {
+            var startup = App.Settings.Current.Startup;
+
+            List<string> urlsToOpen = startup.Mode switch
+            {
+                StartupMode.Continue => App.Settings.Current.LastSessionTabs,
+                StartupMode.ContinueAndNewTab => App.Settings.Current.LastSessionTabs,
+                StartupMode.SpecificPages => startup.Pages,
+                _ => new List<string>()
+            };
+
+            if (urlsToOpen == null || urlsToOpen.Count == 0)
+            {
+                await CreateNewTabAsync();
+            }
+            else
+            {
+                foreach (var url in urlsToOpen)
+                {
+                    if (string.IsNullOrWhiteSpace(url) || url == "about:newtab")
+                        await CreateNewTabAsync();
+                    else
+                        await CreateNewTabAsync(url);
+                }
+            }
+
+            if (startup.Mode == StartupMode.ContinueAndNewTab)
+                await CreateNewTabAsync();
+        }
+
+        /// <summary>
+        /// Captures window size/state and the currently open tab URLs into
+        /// App.Settings.Current, in memory only — App.OnExit performs the actual
+        /// blocking disk write once every window has finished closing.
+        /// </summary>
+        private void SaveWindowAndSessionState()
+        {
+            App.Settings.Current.Window.Width = Width;
+            App.Settings.Current.Window.Height = Height;
+            App.Settings.Current.Window.IsMaximized = WindowState == WindowState.Maximized;
+
+            App.Settings.Current.LastSessionTabs = Tabs
+                .Select(t => t.IsNewTabPage ? "about:newtab" : t.Url)
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .ToList();
+        }
+
+        private bool _closeConfirmed;
+
+        /// <summary>
+        /// Runs on every close path (X button, Alt+F4, taskbar close, or the
+        /// last tab closing itself via CloseTab) — not just CloseButton_Click —
+        /// so session save and "clear on close" reliably happen no matter how
+        /// the window is closed. Cancels the first Closing pass, awaits the
+        /// async cleanup, then closes for real.
+        /// </summary>
+        private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_closeConfirmed) return;
+            e.Cancel = true;
+
+            SaveWindowAndSessionState();
+            await App.Settings.SaveAsync();
+
+            if (App.Settings.Current.ClearOnClose.Enabled)
+            {
+                try
+                {
+                    var profile = _activeTab?.WebView.CoreWebView2?.Profile;
+                    if (profile != null)
+                    {
+                        var kinds = Services.BrowsingDataService.BuildKinds(App.Settings.Current.ClearOnClose.Types);
+                        await Services.BrowsingDataService.ClearAsync(profile, kinds, Services.BrowsingDataService.TimeRange.AllTime);
+                    }
+                }
+                catch
+                {
+                    // Best-effort: never block app exit over a cleanup failure.
+                }
+            }
+
+            _closeConfirmed = true;
+            Close();
         }
 
         // ============================= Custom Themes (gradient toolbar/tab strip) =============================
@@ -91,6 +187,14 @@ namespace RemiBrowser
 
             await tab.WebView.EnsureCoreWebView2Async(App.WebViewEnvironments.NormalEnvironment);
             WireTabEvents(tab);
+
+            // Passwords and autofill toggles live on the shared CoreWebView2Profile
+            // (same object for every normal tab), so re-applying it per tab is
+            // cheap and keeps a freshly created tab in sync even if the setting
+            // was changed in Settings after the app started.
+            var passwordSettings = App.Settings.Current.PasswordManager;
+            tab.WebView.CoreWebView2.Profile.IsPasswordAutosaveEnabled = passwordSettings.OfferToSavePasswords;
+            tab.WebView.CoreWebView2.Profile.IsGeneralAutofillEnabled = passwordSettings.AutofillEnabled;
 
             App.Downloads.Attach(tab.WebView.CoreWebView2);
 
@@ -352,7 +456,8 @@ namespace RemiBrowser
 
             menu.Items.Add(MenuItem("Settings", null, (_, _) =>
             {
-                var settingsWindow = new SettingsWindow { Owner = this };
+                var currentUrls = Tabs.Select(t => t.IsNewTabPage ? "about:newtab" : t.Url).ToList();
+                var settingsWindow = new SettingsWindow(_activeTab?.WebView.CoreWebView2?.Profile, currentUrls) { Owner = this };
                 if (settingsWindow.ShowDialog() == true)
                     ApplyCustomThemeBackground();
             }));
@@ -441,13 +546,9 @@ namespace RemiBrowser
             MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "▢";
         }
 
-        private async void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            App.Settings.Current.Window.Width = Width;
-            App.Settings.Current.Window.Height = Height;
-            App.Settings.Current.Window.IsMaximized = WindowState == WindowState.Maximized;
-            await App.Settings.SaveAsync();
-            Close();
-        }
+        // Session save, settings persistence, and "clear on close" all happen in
+        // MainWindow_Closing (wired in the constructor) so they run no matter
+        // which path closes the window — this button just triggers Close().
+        private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
     }
 }

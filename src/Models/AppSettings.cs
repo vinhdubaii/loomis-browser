@@ -26,6 +26,22 @@ namespace RemiBrowser.Models
         Custom
     }
 
+    /// <summary>Chromium-style "On startup" behavior, chosen in General settings.</summary>
+    public enum StartupMode
+    {
+        /// <summary>Always open a single New Tab page.</summary>
+        NewTab,
+
+        /// <summary>Reopen every tab that was open when the browser last closed.</summary>
+        Continue,
+
+        /// <summary>Open exactly the URLs in StartupSettings.Pages.</summary>
+        SpecificPages,
+
+        /// <summary>Reopen the last session's tabs, plus one extra New Tab page.</summary>
+        ContinueAndNewTab
+    }
+
     public class SecureDnsSettings
     {
         public SecureDnsMode Mode { get; set; } = SecureDnsMode.Off;
@@ -81,6 +97,66 @@ namespace RemiBrowser.Models
         public bool IsMaximized { get; set; } = false;
     }
 
+    /// <summary>"On startup" section of General settings, Chromium-style.</summary>
+    public class StartupSettings
+    {
+        public StartupMode Mode { get; set; } = StartupMode.NewTab;
+
+        /// <summary>Only used when Mode == SpecificPages. One URL per entry, in open order.</summary>
+        public List<string> Pages { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Which categories of data an operation (manual "Delete browsing data" or
+    /// automatic "Clear on close") should wipe. Maps 1:1 onto WebView2's
+    /// CoreWebView2BrowsingDataKinds flags — see Services/BrowsingDataService.
+    /// </summary>
+    public class ClearBrowsingDataTypes
+    {
+        public bool History { get; set; } = true;
+        public bool Cookies { get; set; } = true;
+        public bool Cache { get; set; } = true;
+        public bool DownloadHistory { get; set; } = false;
+        public bool AutofillData { get; set; } = false;
+        public bool Passwords { get; set; } = false;
+    }
+
+    /// <summary>"Clear browsing data when closing Remi" section of Privacy &amp; Security.</summary>
+    public class ClearOnCloseSettings
+    {
+        public bool Enabled { get; set; } = false;
+
+        /// <summary>
+        /// Defaults mirror Cromite's own "clear on exit" defaults: cookies and
+        /// cache go, history/passwords/autofill are left alone unless the user
+        /// opts in explicitly — clearing those every session is more likely to
+        /// annoy someone into disabling the feature than to help them.
+        /// </summary>
+        public ClearBrowsingDataTypes Types { get; set; } = new()
+        {
+            History = false,
+            Cookies = true,
+            Cache = true,
+            DownloadHistory = false,
+            AutofillData = false,
+            Passwords = false
+        };
+    }
+
+    /// <summary>
+    /// "Passwords and autofill" section of Privacy &amp; Security. Both flags map
+    /// directly onto real CoreWebView2Profile properties (IsPasswordAutosaveEnabled
+    /// / IsGeneralAutofillEnabled) — WebView2 does not expose a public API to
+    /// list, view, or delete individual saved passwords/autofill entries from a
+    /// host app, so this settings page intentionally only offers on/off
+    /// switches rather than a fake "manage passwords" list.
+    /// </summary>
+    public class PasswordManagerSettings
+    {
+        public bool OfferToSavePasswords { get; set; } = true;
+        public bool AutofillEnabled { get; set; } = true;
+    }
+
     /// <summary>One draggable color stop on the Custom Themes gradient canvas.</summary>
     public class GradientColorStop
     {
@@ -114,6 +190,7 @@ namespace RemiBrowser.Models
         public string HomepageUrl { get; set; } = "about:newtab";
         public string DefaultSearchEngineName { get; set; } = "Google";
         public List<SearchEngine> SearchEngines { get; set; } = new(SearchEngine.Defaults);
+        public StartupSettings Startup { get; set; } = new();
 
         // Appearance
         public bool ShowBookmarkBar { get; set; } = false;
@@ -124,11 +201,22 @@ namespace RemiBrowser.Models
 
         // Privacy & Security
         public SecureDnsSettings SecureDns { get; set; } = new();
+        public PasswordManagerSettings PasswordManager { get; set; } = new();
+        public ClearOnCloseSettings ClearOnClose { get; set; } = new();
 
         // Downloads
         public DownloadSettings Downloads { get; set; } = new();
 
         // Window state (restored on next launch)
         public WindowSettings Window { get; set; } = new();
+
+        /// <summary>
+        /// URLs of every normal-window tab open at last shutdown (in order),
+        /// saved by MainWindow just before closing, consumed by
+        /// StartupMode.Continue / ContinueAndNewTab on next launch. "about:newtab"
+        /// entries represent a tab that was showing the New Tab page. Never
+        /// touched by private windows.
+        /// </summary>
+        public List<string> LastSessionTabs { get; set; } = new();
     }
 }

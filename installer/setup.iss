@@ -65,5 +65,30 @@ Name: "{group}\Remi Browser"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\Uninstall Remi Browser"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\Remi Browser"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
+[Registry]
+; Registers Remi as a Windows "default browser" candidate, using the same
+; three-part pattern (ProgId + Capabilities + RegisteredApplications) that
+; Chrome/Edge/Firefox all use. Without this, Remi simply never appears in
+; Settings > Default apps for the user to pick — DefaultBrowserService in the
+; app only *reads* this state and opens that Settings page; it cannot set the
+; default itself (blocked by Windows since Win8). ProgId here
+; ("RemiBrowserHTML") must exactly match DefaultBrowserService.ProgId in code.
+
+; ---- ProgId: what http(s)/.htm/.html get opened with once chosen ----
+Root: HKCU; Subkey: "Software\Classes\RemiBrowserHTML"; ValueType: string; ValueName: ""; ValueData: "Remi Browser Document"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\RemiBrowserHTML\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\RemiBrowserHTML\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+
+; ---- Capabilities: what Windows shows in the "Choose default apps" picker ----
+Root: HKCU; Subkey: "Software\RemiBrowser\Capabilities"; ValueType: string; ValueName: "ApplicationName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\RemiBrowser\Capabilities"; ValueType: string; ValueName: "ApplicationDescription"; ValueData: "A fast, privacy-focused web browser."
+Root: HKCU; Subkey: "Software\RemiBrowser\Capabilities\URLAssociations"; ValueType: string; ValueName: "http"; ValueData: "RemiBrowserHTML"
+Root: HKCU; Subkey: "Software\RemiBrowser\Capabilities\URLAssociations"; ValueType: string; ValueName: "https"; ValueData: "RemiBrowserHTML"
+Root: HKCU; Subkey: "Software\RemiBrowser\Capabilities\FileAssociations"; ValueType: string; ValueName: ".htm"; ValueData: "RemiBrowserHTML"
+Root: HKCU; Subkey: "Software\RemiBrowser\Capabilities\FileAssociations"; ValueType: string; ValueName: ".html"; ValueData: "RemiBrowserHTML"
+
+; ---- Tells Windows the Capabilities key above exists and is a browser candidate ----
+Root: HKCU; Subkey: "Software\RegisteredApplications"; ValueType: string; ValueName: "Remi Browser"; ValueData: "Software\RemiBrowser\Capabilities"; Flags: uninsdeletevalue
+
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch Remi Browser"; Flags: nowait postinstall skipifsilent

@@ -111,6 +111,54 @@
                                         Padding="6,3" Click="ManageEnginesButton_Click"/>
                             </StackPanel>
                         </Border>
+
+                        <!-- ===================== On startup ===================== -->
+                        <Border Tag="startup open new tab continue where left off specific pages homepage" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="On startup" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
+
+                                <RadioButton x:Name="StartupNewTabOption" GroupName="Startup" Margin="0,3"
+                                             Content="Open the New Tab page" Checked="StartupOption_Checked"/>
+                                <RadioButton x:Name="StartupContinueOption" GroupName="Startup" Margin="0,3"
+                                             Content="Continue where you left off" Checked="StartupOption_Checked"/>
+                                <RadioButton x:Name="StartupContinueAndNewTabOption" GroupName="Startup" Margin="0,3"
+                                             Content="Continue where you left off and open a New Tab page" Checked="StartupOption_Checked"/>
+                                <RadioButton x:Name="StartupSpecificPagesOption" GroupName="Startup" Margin="0,3"
+                                             Content="Open a specific page or set of pages" Checked="StartupOption_Checked"/>
+
+                                <!-- Only visible when StartupSpecificPagesOption is selected -->
+                                <StackPanel x:Name="StartupPagesPanel" Margin="24,6,0,0" Visibility="Collapsed">
+                                    <ListBox x:Name="StartupPagesList" Height="90" Width="360" HorizontalAlignment="Left"
+                                             Margin="0,0,0,6"/>
+                                    <Grid Width="360" HorizontalAlignment="Left">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="StartupPageUrlBox" Padding="6,4"
+                                                 KeyDown="StartupPageUrlBox_KeyDown"
+                                                 ToolTip="Type a URL and press Enter or Add"/>
+                                        <Button Grid.Column="1" Content="Add" Margin="6,0,0,0" Padding="10,4"
+                                                Click="AddStartupPageButton_Click"/>
+                                    </Grid>
+                                    <Button x:Name="RemoveStartupPageButton" Content="Remove selected" HorizontalAlignment="Left"
+                                            Margin="0,6,0,0" Padding="8,4" Click="RemoveStartupPageButton_Click"/>
+                                    <Button x:Name="UseCurrentPagesButton" Content="Use current pages" HorizontalAlignment="Left"
+                                            Margin="0,6,0,0" Padding="8,4" Click="UseCurrentPagesButton_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ===================== Default browser ===================== -->
+                        <Border Tag="default browser make remi windows" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Default browser" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock x:Name="DefaultBrowserStatusText" TextWrapping="Wrap" MaxWidth="420"
+                                           Margin="0,0,0,6" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <Button x:Name="MakeDefaultButton" Content="Make Remi the default browser" HorizontalAlignment="Left"
+                                        Padding="8,4" Click="MakeDefaultButton_Click"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
 
                     <!-- ===================== Appearance ===================== -->
@@ -158,6 +206,50 @@
                                 <TextBlock Text="Changing Secure DNS requires restarting Remi Browser to take effect."
                                            FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="24,0,0,0"
                                            TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ===================== Passwords and autofill ===================== -->
+                        <Border Tag="password manager passwords autofill save fill forms" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Passwords and autofill" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <CheckBox x:Name="OfferSavePasswordsCheck" Content="Offer to save passwords" Margin="0,2"/>
+                                <CheckBox x:Name="AutofillEnabledCheck" Content="Save and fill addresses, payment methods, and other info" Margin="0,2"/>
+                                <TextBlock Text="Remi uses the browser engine's built-in password store (encrypted per-Windows-account). This build doesn't yet expose a list of individual saved passwords — only these on/off switches."
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,0"
+                                           TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ===================== Delete browsing data ===================== -->
+                        <Border Tag="delete browsing data history cookies cache clear" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Delete browsing data" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="Delete history, cookies, cache, and more" FontSize="11"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                                <Button x:Name="DeleteBrowsingDataButton" Content="Delete browsing data..." HorizontalAlignment="Left"
+                                        Padding="8,4" Click="DeleteBrowsingDataButton_Click"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ===================== Clear on close ===================== -->
+                        <Border Tag="clear browsing data when closing remi exit automatically" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Clear browsing data when closing Remi" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <CheckBox x:Name="ClearOnCloseCheck" Content="Choose what to automatically delete every time you close Remi"
+                                          Margin="0,2" Checked="ClearOnCloseCheck_CheckedChanged" Unchecked="ClearOnCloseCheck_CheckedChanged"/>
+
+                                <StackPanel x:Name="ClearOnClosePanel" Margin="24,6,0,0" Visibility="Collapsed">
+                                    <CheckBox x:Name="ClearOnCloseHistoryCheck" Content="Browsing history" Margin="0,2"/>
+                                    <CheckBox x:Name="ClearOnCloseCookiesCheck" Content="Cookies and other site data" Margin="0,2"/>
+                                    <CheckBox x:Name="ClearOnCloseCacheCheck" Content="Cached images and files" Margin="0,2"/>
+                                    <CheckBox x:Name="ClearOnCloseDownloadHistoryCheck" Content="Download history" Margin="0,2"/>
+                                    <CheckBox x:Name="ClearOnCloseAutofillCheck" Content="Autofill form data" Margin="0,2"/>
+                                    <CheckBox x:Name="ClearOnClosePasswordsCheck" Content="Passwords" Margin="0,2"/>
+                                    <TextBlock Text="Signing into sites again every time you reopen Remi is expected if 'Cookies and other site data' stays checked here."
+                                               FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,0"
+                                               TextWrapping="Wrap" MaxWidth="380" HorizontalAlignment="Left"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
