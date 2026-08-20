@@ -263,7 +263,10 @@
                             <StackPanel>
                                 <CheckBox x:Name="OfferSavePasswordsCheck" Content="Offer to save passwords" Margin="0,2"/>
                                 <CheckBox x:Name="AutofillEnabledCheck" Content="Save and fill addresses, payment methods, and other info" Margin="0,2"/>
-                                <TextBlock Text="Remi uses the browser engine's built-in password store (encrypted per-Windows-account). This build doesn't yet expose a list of individual saved passwords — only these on/off switches."
+                                <Button x:Name="OpenPasswordManagerButton" Content="Open Password Manager..."
+                                        HorizontalAlignment="Left" Padding="10,5" Margin="0,10,0,0"
+                                        Click="OpenPasswordManagerButton_Click"/>
+                                <TextBlock Text="Passwords are stored in the browser engine's built-in password store, encrypted per Windows account. The button above opens the engine's own Password Manager page to view, search, or remove saved logins."
                                            FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,0"
                                            TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left"/>
                             </StackPanel>

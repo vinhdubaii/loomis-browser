@@ -301,6 +301,11 @@ namespace RemiBrowser.Views
 
         // ============================= Passwords / Delete browsing data / Clear on close =============================
 
+        private void OpenPasswordManagerButton_Click(object sender, RoutedEventArgs e)
+        {
+            new PasswordManagerWindow { Owner = this }.Show();
+        }
+
         private void DeleteBrowsingDataButton_Click(object sender, RoutedEventArgs e)
         {
             if (_activeProfile == null)
