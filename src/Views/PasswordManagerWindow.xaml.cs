@@ -34,7 +34,7 @@ namespace RemiBrowser.Views
             ContentHost.Children.Add(_webView);
 
             await _webView.EnsureCoreWebView2Async(App.WebViewEnvironments.NormalEnvironment);
-            _webView.CoreWebView2.Navigate("edge://password-manager/passwords");
+            _webView.CoreWebView2.Navigate("edge://settings/passwords");
         }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
