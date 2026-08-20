@@ -144,6 +144,27 @@ namespace RemiBrowser
                 }
             }
 
+            // Dispose every remaining tab's WebView2 so the Chromium child
+            // processes (renderer, GPU, network/storage utility) receive a
+            // real shutdown signal instead of lingering in Task Manager after
+            // the window disappears — matters most when the user closes the
+            // whole app via X/Alt+F4 with 2+ tabs still open, since CloseTab
+            // (used when closing tabs one at a time) already disposes as it
+            // goes and would otherwise be the only place this happens.
+            foreach (var tab in Tabs)
+            {
+                try
+                {
+                    TabContentHost.Children.Remove(tab.WebView);
+                    tab.WebView.Dispose();
+                }
+                catch
+                {
+                    // Best-effort per tab: one bad WebView2 shouldn't block app exit.
+                }
+            }
+            Tabs.Clear();
+
             _closeConfirmed = true;
             Close();
         }
