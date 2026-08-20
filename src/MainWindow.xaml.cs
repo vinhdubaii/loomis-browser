@@ -24,6 +24,7 @@ namespace RemiBrowser
 
         private bool _isFullScreen;
         private WindowState _preFullScreenWindowState;
+        private Rect _preFullScreenBounds;
 
         public MainWindow()
         {
@@ -32,10 +33,8 @@ namespace RemiBrowser
             // Correct fix for the WindowChrome + WindowStyle="None" + Maximized
             // rendering bug (previously patched with a margin-compensation hack
             // that overcompensated and caused visible black gaps — see
-            // Interop/WindowMaximizeFix.cs for the full story). The () => _isFullScreen
-            // callback is what lets ToggleFullScreen() below cover the taskbar too,
-            // instead of only ever maximizing to the work area.
-            Interop.WindowMaximizeFix.Apply(this, () => _isFullScreen);
+            // Interop/WindowMaximizeFix.cs for the full story).
+            Interop.WindowMaximizeFix.Apply(this);
 
             Width = App.Settings.Current.Window.Width;
             Height = App.Settings.Current.Window.Height;
@@ -627,9 +626,20 @@ namespace RemiBrowser
         /// True F11-style full screen: hides the toolbar/tab strip/bookmark bar and
         /// resizes the window to cover the *entire* monitor, taskbar included — not
         /// just "maximized", which this app intentionally restricts to the work area
-        /// (see WindowMaximizeFix.cs). Toggling WindowState through Normal first
-        /// forces Windows to re-run WM_GETMINMAXINFO even if the window happened to
-        /// already be maximized, so the flag change actually takes effect.
+        /// (see WindowMaximizeFix.cs).
+        ///
+        /// Deliberately does NOT use WindowState.Maximized for this, even though
+        /// that would seem simpler: Windows still treats a truly-maximized window as
+        /// "maximized" at the shell/DWM level even when it's borderless, which is
+        /// what caused two real bugs when this used WindowState.Maximized — the
+        /// taskbar not actually hiding (WM_GETMINMAXINFO isn't reliably re-queried
+        /// by toggling WindowState twice in the same tick) and Windows 11 drawing
+        /// its own hover-triggered restore/"X" affordance at the top edge, which
+        /// this app never rendered itself. Keeping WindowState.Normal and manually
+        /// setting Left/Top/Width/Height to the monitor's full bounds sidesteps both:
+        /// the OS never considers the window maximized, so no stray hover control
+        /// appears, and the bounds are applied directly with no dependency on the
+        /// OS re-sending any message.
         /// </summary>
         private void ToggleFullScreen()
         {
@@ -638,18 +648,40 @@ namespace RemiBrowser
             if (_isFullScreen)
             {
                 _preFullScreenWindowState = WindowState;
+                _preFullScreenBounds = new Rect(Left, Top, Width, Height);
 
                 ToolbarRow.Visibility = Visibility.Collapsed;
                 TabStripBorder.Visibility = Visibility.Collapsed;
                 BookmarkBarHost.Visibility = Visibility.Collapsed;
 
-                WindowState = WindowState.Normal;
-                WindowState = WindowState.Maximized;
+                // Manual bounds only take effect from Normal — WPF ignores
+                // Left/Top/Width/Height while WindowState is Maximized.
+                if (WindowState != WindowState.Normal)
+                    WindowState = WindowState.Normal;
+
+                var monitorBounds = Interop.WindowMaximizeFix.GetMonitorBoundsInDips(this);
+                if (!monitorBounds.IsEmpty)
+                {
+                    Left = monitorBounds.Left;
+                    Top = monitorBounds.Top;
+                    Width = monitorBounds.Width;
+                    Height = monitorBounds.Height;
+                }
             }
             else
             {
                 WindowState = WindowState.Normal;
-                WindowState = _preFullScreenWindowState;
+                if (_preFullScreenWindowState == WindowState.Maximized)
+                {
+                    WindowState = WindowState.Maximized;
+                }
+                else
+                {
+                    Left = _preFullScreenBounds.Left;
+                    Top = _preFullScreenBounds.Top;
+                    Width = _preFullScreenBounds.Width;
+                    Height = _preFullScreenBounds.Height;
+                }
                 MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "▢";
 
                 ToolbarRow.Visibility = Visibility.Visible;
