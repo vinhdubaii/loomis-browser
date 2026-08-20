@@ -28,33 +28,42 @@ namespace RemiBrowser.Interop
     /// Usage: call WindowMaximizeFix.Apply(this) once from any
     /// WindowStyle="None" + WindowChrome window's constructor, right after
     /// InitializeComponent().
+    ///
+    /// Optional second argument (useFullMonitorBounds): a callback the window
+    /// can use to opt into true F11-style full screen. When it returns true,
+    /// WM_GETMINMAXINFO is answered with the monitor's *full* bounds (rcMonitor)
+    /// instead of the work area (rcWork) — i.e. the window is allowed to cover
+    /// the taskbar too, exactly like Chrome/Edge full screen. It's re-checked
+    /// on every maximize, so the same window can toggle between "maximized
+    /// (work area only)" and "full screen (whole monitor)" just by changing
+    /// what the callback returns and re-triggering WindowState = Maximized.
     /// </summary>
     public static class WindowMaximizeFix
     {
-        public static void Apply(Window window)
+        public static void Apply(Window window, Func<bool>? useFullMonitorBounds = null)
         {
             window.SourceInitialized += (_, _) =>
             {
                 var handle = new WindowInteropHelper(window).Handle;
                 if (HwndSource.FromHwnd(handle) is { } hwndSource)
-                    hwndSource.AddHook(WindowProc);
+                {
+                    hwndSource.AddHook((IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+                    {
+                        if (msg == WM_GETMINMAXINFO)
+                        {
+                            ApplyAreaToMinMaxInfo(hwnd, lParam, useFullMonitorBounds?.Invoke() ?? false);
+                            handled = true;
+                        }
+                        return IntPtr.Zero;
+                    });
+                }
             };
         }
 
         private const int WM_GETMINMAXINFO = 0x0024;
         private const int MONITOR_DEFAULTTONEAREST = 0x00000002;
 
-        private static IntPtr WindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (msg == WM_GETMINMAXINFO)
-            {
-                ApplyWorkAreaToMinMaxInfo(hwnd, lParam);
-                handled = true;
-            }
-            return IntPtr.Zero;
-        }
-
-        private static void ApplyWorkAreaToMinMaxInfo(IntPtr hwnd, IntPtr lParam)
+        private static void ApplyAreaToMinMaxInfo(IntPtr hwnd, IntPtr lParam, bool useFullMonitorBounds)
         {
             var minMaxInfo = Marshal.PtrToStructure<MINMAXINFO>(lParam);
 
@@ -64,16 +73,16 @@ namespace RemiBrowser.Interop
                 var monitorInfo = new MONITORINFO { cbSize = Marshal.SizeOf(typeof(MONITORINFO)) };
                 GetMonitorInfo(monitor, ref monitorInfo);
 
-                var workArea = monitorInfo.rcWork;
                 var monitorArea = monitorInfo.rcMonitor;
+                var targetArea = useFullMonitorBounds ? monitorArea : monitorInfo.rcWork;
 
                 // Position is relative to the monitor's own top-left, not the
                 // virtual desktop's — this is what makes multi-monitor setups
                 // maximize onto the correct screen instead of monitor 0.
-                minMaxInfo.ptMaxPosition.X = workArea.Left - monitorArea.Left;
-                minMaxInfo.ptMaxPosition.Y = workArea.Top - monitorArea.Top;
-                minMaxInfo.ptMaxSize.X = workArea.Right - workArea.Left;
-                minMaxInfo.ptMaxSize.Y = workArea.Bottom - workArea.Top;
+                minMaxInfo.ptMaxPosition.X = targetArea.Left - monitorArea.Left;
+                minMaxInfo.ptMaxPosition.Y = targetArea.Top - monitorArea.Top;
+                minMaxInfo.ptMaxSize.X = targetArea.Right - targetArea.Left;
+                minMaxInfo.ptMaxSize.Y = targetArea.Bottom - targetArea.Top;
             }
 
             Marshal.StructureToPtr(minMaxInfo, lParam, true);

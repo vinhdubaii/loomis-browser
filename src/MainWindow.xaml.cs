@@ -22,6 +22,9 @@ namespace RemiBrowser
         public ObservableCollection<BrowserTab> Tabs { get; } = new();
         private BrowserTab? _activeTab;
 
+        private bool _isFullScreen;
+        private WindowState _preFullScreenWindowState;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -29,8 +32,10 @@ namespace RemiBrowser
             // Correct fix for the WindowChrome + WindowStyle="None" + Maximized
             // rendering bug (previously patched with a margin-compensation hack
             // that overcompensated and caused visible black gaps — see
-            // Interop/WindowMaximizeFix.cs for the full story).
-            Interop.WindowMaximizeFix.Apply(this);
+            // Interop/WindowMaximizeFix.cs for the full story). The () => _isFullScreen
+            // callback is what lets ToggleFullScreen() below cover the taskbar too,
+            // instead of only ever maximizing to the work area.
+            Interop.WindowMaximizeFix.Apply(this, () => _isFullScreen);
 
             Width = App.Settings.Current.Window.Width;
             Height = App.Settings.Current.Window.Height;
@@ -43,6 +48,8 @@ namespace RemiBrowser
             RebuildBookmarkBar();
             ApplyCustomThemeBackground();
 
+            PreviewKeyDown += MainWindow_PreviewKeyDown;
+            PreviewMouseWheel += MainWindow_PreviewMouseWheel;
             Closing += MainWindow_Closing;
 
             _ = InitializeStartupTabsAsync();
@@ -187,6 +194,13 @@ namespace RemiBrowser
 
             await tab.WebView.EnsureCoreWebView2Async(App.WebViewEnvironments.NormalEnvironment);
             WireTabEvents(tab);
+
+            // Chromium has its own built-in Ctrl+Wheel/Ctrl+Plus/Ctrl+Minus zoom
+            // handling, which would otherwise fight with our own zoom menu/shortcuts
+            // below and pop up its own little "125%" bubble that doesn't match this
+            // app's UI. WebView2.ZoomFactor still works perfectly with this off —
+            // it's the same underlying zoom, just driven by us instead of Chromium.
+            tab.WebView.CoreWebView2.Settings.IsZoomControlEnabled = false;
 
             // Passwords and autofill toggles live on the shared CoreWebView2Profile
             // (same object for every normal tab), so re-applying it per tab is
@@ -439,6 +453,8 @@ namespace RemiBrowser
             menu.Items.Add(MenuItem("New Tab", "Ctrl+T", async (_, _) => await CreateNewTabAsync()));
             menu.Items.Add(MenuItem("New Private Window", "Ctrl+Shift+N", (_, _) => OpenPrivateWindow()));
             menu.Items.Add(new Separator());
+            menu.Items.Add(BuildZoomMenuItem());
+            menu.Items.Add(new Separator());
 
             var showBookmarkBar = new MenuItem { Header = "Show Bookmark Bar", IsCheckable = true, IsChecked = App.Settings.Current.ShowBookmarkBar };
             showBookmarkBar.Click += async (_, _) =>
@@ -476,6 +492,53 @@ namespace RemiBrowser
             var item = new MenuItem { Header = header, InputGestureText = gesture ?? string.Empty };
             item.Click += handler;
             return item;
+        }
+
+        /// <summary>
+        /// Builds the "🔍 Zoom  −  100%  +  ⛶" row shown inside the hamburger menu,
+        /// matching Chrome/Edge's own zoom row. It's a single MenuItem whose Header
+        /// is a custom StackPanel (WPF allows arbitrary content there) so the +/−/
+        /// full-screen buttons can be clicked without the menu closing each time —
+        /// StaysOpenOnClick handles that, same as it does for the "Show Bookmark Bar"
+        /// checkable item just below it.
+        /// </summary>
+        private MenuItem BuildZoomMenuItem()
+        {
+            var textBrush = (Brush)FindResource("TextPrimaryBrush");
+            var borderBrush = (Brush)FindResource("ChromeBorderBrush");
+            var smallIconStyle = (Style)FindResource("ChromeIconButton");
+
+            var percentText = new TextBlock
+            {
+                Text = $"{Math.Round(CurrentZoom * 100)}%",
+                Width = 42,
+                TextAlignment = TextAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 12,
+                Foreground = textBrush
+            };
+
+            void RefreshPercentText() => percentText.Text = $"{Math.Round(CurrentZoom * 100)}%";
+
+            var zoomOutButton = new Button { Content = "－", Style = smallIconStyle, Width = 26, Height = 26, ToolTip = "Zoom out (Ctrl+-)" };
+            zoomOutButton.Click += (_, _) => { ZoomOut(); RefreshPercentText(); };
+
+            var zoomInButton = new Button { Content = "＋", Style = smallIconStyle, Width = 26, Height = 26, ToolTip = "Zoom in (Ctrl++)" };
+            zoomInButton.Click += (_, _) => { ZoomIn(); RefreshPercentText(); };
+
+            var fullScreenButton = new Button { Content = "⛶", Style = smallIconStyle, Width = 26, Height = 26, ToolTip = "Full screen (F11)" };
+            fullScreenButton.Click += (_, _) => ToggleFullScreen();
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 2, 6, 2), VerticalAlignment = VerticalAlignment.Center };
+            row.Children.Add(new TextBlock { Text = "🔍", FontSize = 12, Margin = new Thickness(4, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = textBrush });
+            row.Children.Add(new TextBlock { Text = "Zoom", Width = 64, VerticalAlignment = VerticalAlignment.Center, Foreground = textBrush });
+            row.Children.Add(zoomOutButton);
+            row.Children.Add(percentText);
+            row.Children.Add(zoomInButton);
+            row.Children.Add(new Border { Width = 1, Height = 20, Background = borderBrush, Margin = new Thickness(8, 0, 8, 0) });
+            row.Children.Add(fullScreenButton);
+
+            return new MenuItem { Header = row, StaysOpenOnClick = true, Focusable = false };
         }
 
         private void ShowAbout()
@@ -523,6 +586,121 @@ namespace RemiBrowser
                 button.Click += (_, _) => NavigateActiveTab(bookmark.Url);
                 BookmarkBarItems.Items.Add(button);
             }
+        }
+
+        // ============================= Zoom & Full Screen =============================
+
+        // Same step levels Chrome/Edge cycle through on Ctrl+Plus/Minus.
+        private static readonly double[] ZoomLevels =
+        {
+            0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1.0,
+            1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0
+        };
+
+        private const double DefaultZoom = 1.0;
+
+        // Zoom lives on each tab's own WebView2.ZoomFactor, so it's naturally
+        // per-tab already (matches real browsers) — no extra state to track here.
+        private double CurrentZoom => _activeTab?.WebView.ZoomFactor ?? DefaultZoom;
+
+        private void ZoomIn()
+        {
+            if (_activeTab is not { } tab) return;
+            var next = ZoomLevels.FirstOrDefault(level => level > tab.WebView.ZoomFactor + 0.001);
+            tab.WebView.ZoomFactor = next > 0 ? next : ZoomLevels[^1];
+        }
+
+        private void ZoomOut()
+        {
+            if (_activeTab is not { } tab) return;
+            var prev = ZoomLevels.LastOrDefault(level => level < tab.WebView.ZoomFactor - 0.001);
+            tab.WebView.ZoomFactor = prev > 0 ? prev : ZoomLevels[0];
+        }
+
+        private void ZoomReset()
+        {
+            if (_activeTab is { } tab)
+                tab.WebView.ZoomFactor = DefaultZoom;
+        }
+
+        /// <summary>
+        /// True F11-style full screen: hides the toolbar/tab strip/bookmark bar and
+        /// resizes the window to cover the *entire* monitor, taskbar included — not
+        /// just "maximized", which this app intentionally restricts to the work area
+        /// (see WindowMaximizeFix.cs). Toggling WindowState through Normal first
+        /// forces Windows to re-run WM_GETMINMAXINFO even if the window happened to
+        /// already be maximized, so the flag change actually takes effect.
+        /// </summary>
+        private void ToggleFullScreen()
+        {
+            _isFullScreen = !_isFullScreen;
+
+            if (_isFullScreen)
+            {
+                _preFullScreenWindowState = WindowState;
+
+                ToolbarRow.Visibility = Visibility.Collapsed;
+                TabStripBorder.Visibility = Visibility.Collapsed;
+                BookmarkBarHost.Visibility = Visibility.Collapsed;
+
+                WindowState = WindowState.Normal;
+                WindowState = WindowState.Maximized;
+            }
+            else
+            {
+                WindowState = WindowState.Normal;
+                WindowState = _preFullScreenWindowState;
+                MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "▢";
+
+                ToolbarRow.Visibility = Visibility.Visible;
+                TabStripBorder.Visibility = Tabs.Count >= 2 ? Visibility.Visible : Visibility.Collapsed;
+                RebuildBookmarkBar(); // restores its own Settings-driven visibility
+            }
+        }
+
+        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.F11)
+            {
+                ToggleFullScreen();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Escape && _isFullScreen)
+            {
+                ToggleFullScreen();
+                e.Handled = true;
+                return;
+            }
+
+            if (Keyboard.Modifiers != ModifierKeys.Control) return;
+
+            switch (e.Key)
+            {
+                case Key.OemPlus:
+                case Key.Add:
+                    ZoomIn();
+                    e.Handled = true;
+                    break;
+                case Key.OemMinus:
+                case Key.Subtract:
+                    ZoomOut();
+                    e.Handled = true;
+                    break;
+                case Key.D0:
+                case Key.NumPad0:
+                    ZoomReset();
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        private void MainWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers != ModifierKeys.Control) return;
+            if (e.Delta > 0) ZoomIn(); else ZoomOut();
+            e.Handled = true;
         }
 
         // ============================= Window chrome (custom title bar) =============================
