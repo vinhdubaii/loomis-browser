@@ -34,7 +34,7 @@ namespace RemiBrowser.Services
             {
                 if (File.Exists(_filePath))
                 {
-                    var json = await File.ReadAllTextAsync(_filePath);
+                    var json = await File.ReadAllTextAsync(_filePath).ConfigureAwait(false);
                     var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
                     if (loaded != null)
                     {
@@ -62,7 +62,7 @@ namespace RemiBrowser.Services
                     Directory.CreateDirectory(directory);
 
                 var json = JsonSerializer.Serialize(Current, JsonOptions);
-                await File.WriteAllTextAsync(_filePath, json);
+                await File.WriteAllTextAsync(_filePath, json).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
