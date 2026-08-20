@@ -71,12 +71,18 @@
                 </Border>
 
                 <StackPanel x:Name="SidebarNav" DockPanel.Dock="Top" Margin="0,4,0,0">
-                    <RadioButton x:Name="NavGeneral" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 IsChecked="True" Checked="Nav_Checked" Content="General"/>
+                    <RadioButton x:Name="NavSearchEngine" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
+                                 IsChecked="True" Checked="Nav_Checked" Content="Search engine"/>
                     <RadioButton x:Name="NavAppearance" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
                                  Checked="Nav_Checked" Content="Appearance"/>
                     <RadioButton x:Name="NavPrivacy" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
                                  Checked="Nav_Checked" Content="Privacy &amp; Security"/>
+                    <RadioButton x:Name="NavAutofillPasswords" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
+                                 Checked="Nav_Checked" Content="Autofill and passwords"/>
+                    <RadioButton x:Name="NavDefaultBrowser" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
+                                 Checked="Nav_Checked" Content="Default browser"/>
+                    <RadioButton x:Name="NavOnStartup" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
+                                 Checked="Nav_Checked" Content="On startup"/>
                     <RadioButton x:Name="NavDownloads" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
                                  Checked="Nav_Checked" Content="Downloads"/>
                     <RadioButton x:Name="NavCustomThemes" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
@@ -98,25 +104,27 @@
                 <StackPanel x:Name="ContentStack">
 
                     <!-- ===================== General ===================== -->
-                    <StackPanel x:Name="PanelGeneral">
-                        <TextBlock Text="General" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"
+                    <StackPanel x:Name="PanelSearchEngine">
+                        <TextBlock Text="Search engine" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
 
                         <Border Tag="search engine default google bing duckduckgo" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="Search engine" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <ComboBox x:Name="SearchEngineCombo" Width="240" HorizontalAlignment="Left" Margin="0,0,0,6"
                                           DisplayMemberPath="Name"/>
                                 <Button x:Name="ManageEnginesButton" Content="Manage search engines..." HorizontalAlignment="Left"
                                         Padding="6,3" Click="ManageEnginesButton_Click"/>
                             </StackPanel>
                         </Border>
+                    </StackPanel>
 
-                        <!-- ===================== On startup ===================== -->
+                    <!-- ===================== On startup ===================== -->
+                    <StackPanel x:Name="PanelOnStartup" Visibility="Collapsed">
+                        <TextBlock Text="On startup" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+
                         <Border Tag="startup open new tab continue where left off specific pages homepage" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="On startup" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
-
                                 <RadioButton x:Name="StartupNewTabOption" GroupName="Startup" Margin="0,3"
                                              Content="Open the New Tab page" Checked="StartupOption_Checked"/>
                                 <RadioButton x:Name="StartupContinueOption" GroupName="Startup" Margin="0,3"
@@ -148,11 +156,15 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+                    </StackPanel>
 
-                        <!-- ===================== Default browser ===================== -->
+                    <!-- ===================== Default browser ===================== -->
+                    <StackPanel x:Name="PanelDefaultBrowser" Visibility="Collapsed">
+                        <TextBlock Text="Default browser" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+
                         <Border Tag="default browser make remi windows" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="Default browser" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBlock x:Name="DefaultBrowserStatusText" TextWrapping="Wrap" MaxWidth="420"
                                            Margin="0,0,0,6" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <Button x:Name="MakeDefaultButton" Content="Make Remi the default browser" HorizontalAlignment="Left"
@@ -209,18 +221,6 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- ===================== Passwords and autofill ===================== -->
-                        <Border Tag="password manager passwords autofill save fill forms" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="Passwords and autofill" Margin="0,0,0,4" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                <CheckBox x:Name="OfferSavePasswordsCheck" Content="Offer to save passwords" Margin="0,2"/>
-                                <CheckBox x:Name="AutofillEnabledCheck" Content="Save and fill addresses, payment methods, and other info" Margin="0,2"/>
-                                <TextBlock Text="Remi uses the browser engine's built-in password store (encrypted per-Windows-account). This build doesn't yet expose a list of individual saved passwords — only these on/off switches."
-                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,0"
-                                           TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left"/>
-                            </StackPanel>
-                        </Border>
-
                         <!-- ===================== Delete browsing data ===================== -->
                         <Border Tag="delete browsing data history cookies cache clear" Margin="0,0,0,10">
                             <StackPanel>
@@ -250,6 +250,22 @@
                                                FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,0"
                                                TextWrapping="Wrap" MaxWidth="380" HorizontalAlignment="Left"/>
                                 </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- ===================== Autofill and passwords ===================== -->
+                    <StackPanel x:Name="PanelAutofillPasswords" Visibility="Collapsed">
+                        <TextBlock Text="Autofill and passwords" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                        <Border Tag="password manager passwords autofill save fill forms" Margin="0,0,0,10">
+                            <StackPanel>
+                                <CheckBox x:Name="OfferSavePasswordsCheck" Content="Offer to save passwords" Margin="0,2"/>
+                                <CheckBox x:Name="AutofillEnabledCheck" Content="Save and fill addresses, payment methods, and other info" Margin="0,2"/>
+                                <TextBlock Text="Remi uses the browser engine's built-in password store (encrypted per-Windows-account). This build doesn't yet expose a list of individual saved passwords — only these on/off switches."
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,0"
+                                           TextWrapping="Wrap" MaxWidth="420" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>

@@ -50,7 +50,7 @@ namespace RemiBrowser.Views
             _activeProfile = activeProfile;
             _currentTabUrls = currentTabUrls;
 
-            _allPanels = new List<StackPanel> { PanelGeneral, PanelAppearance, PanelPrivacy, PanelDownloads, PanelCustomThemes, PanelAbout };
+            _allPanels = new List<StackPanel> { PanelSearchEngine, PanelAppearance, PanelPrivacy, PanelAutofillPasswords, PanelDefaultBrowser, PanelOnStartup, PanelDownloads, PanelCustomThemes, PanelAbout };
             _allFieldGroups = _allPanels.SelectMany(p => p.Children.OfType<Border>()).ToList();
 
             LoadFromSettings();
@@ -148,7 +148,7 @@ namespace RemiBrowser.Views
 
         private void Nav_Checked(object sender, RoutedEventArgs e)
         {
-            // Same InitializeComponent-ordering guard as LibraryPanel: NavGeneral has
+            // Same InitializeComponent-ordering guard as LibraryPanel: NavSearchEngine has
             // IsChecked="True" in XAML, which fires this Checked handler once during
             // InitializeComponent(), before _allPanels has been built yet (it's built
             // in the constructor body, right after InitializeComponent() returns).
@@ -157,13 +157,16 @@ namespace RemiBrowser.Views
 
             ShowOnlyPanel(sender switch
             {
-                _ when ReferenceEquals(sender, NavGeneral) => PanelGeneral,
+                _ when ReferenceEquals(sender, NavSearchEngine) => PanelSearchEngine,
                 _ when ReferenceEquals(sender, NavAppearance) => PanelAppearance,
                 _ when ReferenceEquals(sender, NavPrivacy) => PanelPrivacy,
+                _ when ReferenceEquals(sender, NavAutofillPasswords) => PanelAutofillPasswords,
+                _ when ReferenceEquals(sender, NavDefaultBrowser) => PanelDefaultBrowser,
+                _ when ReferenceEquals(sender, NavOnStartup) => PanelOnStartup,
                 _ when ReferenceEquals(sender, NavDownloads) => PanelDownloads,
                 _ when ReferenceEquals(sender, NavCustomThemes) => PanelCustomThemes,
                 _ when ReferenceEquals(sender, NavAbout) => PanelAbout,
-                _ => PanelGeneral
+                _ => PanelSearchEngine
             });
         }
 
