@@ -457,6 +457,7 @@ namespace RemiBrowser
         private void BackButton_Click(object sender, RoutedEventArgs e) => _activeTab?.WebView.CoreWebView2.GoBack();
         private void ForwardButton_Click(object sender, RoutedEventArgs e) => _activeTab?.WebView.CoreWebView2.GoForward();
         private void ReloadButton_Click(object sender, RoutedEventArgs e) => _activeTab?.WebView.CoreWebView2.Reload();
+        private void HomeButton_Click(object sender, RoutedEventArgs e) => NavigateActiveTab("about:newtab");
         private async void NewTabButton_Click(object sender, RoutedEventArgs e) => await CreateNewTabAsync();
 
         private async void BookmarkStarButton_Click(object sender, RoutedEventArgs e)

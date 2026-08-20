@@ -72,6 +72,34 @@
                 </Setter>
             </Style>
 
+            <!-- ===================== Nav cluster (Back/Forward/Reload/Home/New Tab) =====================
+                 A slightly bigger touch target than the general ChromeIconButton
+                 (which also covers title-bar/library/menu buttons elsewhere, left
+                 untouched), paired with real vector icons instead of Unicode glyph
+                 characters — those render thin and inconsistently across Windows
+                 font fallbacks, which read as "small" even inside a normal-sized
+                 button. -->
+            <Style x:Key="NavIconButton" TargetType="Button" BasedOn="{StaticResource ChromeIconButton}">
+                <Setter Property="Width" Value="36"/>
+                <Setter Property="Height" Value="36"/>
+            </Style>
+
+            <!-- Shared look for every nav icon's Path: soft, rounded strokes
+                 (Lucide/Feather-style outline icons) rather than filled shapes,
+                 matching a softer, more modern feel than the old glyph characters.
+                 Each button just supplies its own Data. -->
+            <Style x:Key="NavIconPath" TargetType="Path">
+                <Setter Property="Width" Value="18"/>
+                <Setter Property="Height" Value="18"/>
+                <Setter Property="Stretch" Value="Uniform"/>
+                <Setter Property="Fill" Value="Transparent"/>
+                <Setter Property="Stroke" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="StrokeThickness" Value="2"/>
+                <Setter Property="StrokeLineJoin" Value="Round"/>
+                <Setter Property="StrokeStartLineCap" Value="Round"/>
+                <Setter Property="StrokeEndLineCap" Value="Round"/>
+            </Style>
+
             <!-- Sidebar nav item style for the Chromium-style Settings window -->
             <Style x:Key="SettingsSidebarItem" TargetType="RadioButton">
                 <Setter Property="Padding" Value="12,8"/>

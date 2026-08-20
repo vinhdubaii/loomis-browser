@@ -35,25 +35,40 @@
                 <ColumnDefinition Width="Auto"/> <!-- min/max/close -->
             </Grid.ColumnDefinitions>
 
-            <!-- Navigation buttons -->
+            <!-- Navigation buttons. Icons are hand-drawn vector Paths (Lucide/
+                 Feather-style rounded outline strokes) sharing the NavIconPath
+                 style above, not Unicode glyph characters — see NavIconButton's
+                 doc comment in App.xaml for why. -->
             <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="8,0,4,0" VerticalAlignment="Center">
-                <Button x:Name="BackButton" Style="{StaticResource ChromeIconButton}" Click="BackButton_Click"
-                        ToolTip="Back" Content="◀"/>
-                <Button x:Name="ForwardButton" Style="{StaticResource ChromeIconButton}" Click="ForwardButton_Click"
-                        ToolTip="Forward" Content="▶"/>
-                <Button x:Name="ReloadButton" Style="{StaticResource ChromeIconButton}" Click="ReloadButton_Click"
-                        ToolTip="Reload" Content="⟳"/>
-                <Button x:Name="NewTabButton" Style="{StaticResource ChromeIconButton}" Click="NewTabButton_Click"
-                        ToolTip="New Tab (Ctrl+T)" Content="＋"/>
+                <Button x:Name="BackButton" Style="{StaticResource NavIconButton}" Click="BackButton_Click" ToolTip="Back">
+                    <Path Style="{StaticResource NavIconPath}" Data="M15,6 L9,12 L15,18"/>
+                </Button>
+                <Button x:Name="ForwardButton" Style="{StaticResource NavIconButton}" Click="ForwardButton_Click" ToolTip="Forward">
+                    <Path Style="{StaticResource NavIconPath}" Data="M9,6 L15,12 L9,18"/>
+                </Button>
+                <Button x:Name="ReloadButton" Style="{StaticResource NavIconButton}" Click="ReloadButton_Click" ToolTip="Reload">
+                    <Path Style="{StaticResource NavIconPath}"
+                          Data="M12,4 A8,8 0 1 0 19.5,9 M20,4 L19.5,9 L15,8"/>
+                </Button>
+                <Button x:Name="HomeButton" Style="{StaticResource NavIconButton}" Click="HomeButton_Click" ToolTip="Home">
+                    <Path Style="{StaticResource NavIconPath}"
+                          Data="M4,11 L12,4 L20,11 M6,10 L6,20 L18,20 L18,10 M10,20 L10,14 L14,14 L14,20"/>
+                </Button>
+                <Button x:Name="NewTabButton" Style="{StaticResource NavIconButton}" Click="NewTabButton_Click" ToolTip="New Tab (Ctrl+T)">
+                    <Path Style="{StaticResource NavIconPath}" Data="M12,5 L12,19 M5,12 L19,12"/>
+                </Button>
             </StackPanel>
 
             <!-- Address bar: pill shape, lock + text + star inline. Background is a
                  semi-transparent themed overlay (not a hardcoded color) so a Custom
                  Themes gradient behind the toolbar shows through softly while typed
                  text stays legible in both Light and Dark mode — see
-                 Themes/Light.xaml + Dark.xaml's AddressPillOverlayBrush. -->
+                 Themes/Light.xaml + Dark.xaml's AddressPillOverlayBrush. Margin is
+                 a little wider on the left than before, now that the nav cluster
+                 has 5 buttons instead of 4, so the bar doesn't feel like it starts
+                 immediately at the last icon. -->
             <Border Grid.Column="1" Background="{DynamicResource AddressPillOverlayBrush}" CornerRadius="16" Height="32"
-                    Margin="8,0" VerticalAlignment="Center">
+                    Margin="12,0,8,0" VerticalAlignment="Center">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
