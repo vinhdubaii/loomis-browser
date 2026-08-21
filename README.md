@@ -1,192 +1,104 @@
+<div align="center">
+
 # Remi Browser
 
-A small, general-purpose Windows web browser built on **WebView2** (Chromium),
-with tabs, bookmarks, history, private browsing, and a self-updating installer.
-Open source under the MIT License.
+**A calmer way to browse the web.**
 
-Repo: https://github.com/vinhdubaii/remi-browser
+Fast, private, and yours to shape — built on Chromium, designed from scratch.
 
-## Status
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
+![Status](https://img.shields.io/badge/status-active%20development-orange)
 
-This is an early skeleton — architecture and core plumbing are in place, but
-several pieces are intentionally left as follow-ups (see "Known gaps" below).
-The app icon is generated automatically in CI from
-`src/Assets/source/remi-logo-2000.png` — see "App icon" below.
+</div>
 
-## Stack
+---
 
-- **C# / WPF** (`net8.0-windows`), custom Epiphany-style unified title bar
-  via `WindowChrome`
-- **Microsoft.Web.WebView2** — one `CoreWebView2Environment` for normal
-  browsing (persistent profile in `%AppData%\Remi Browser\WebView2Profile`),
-  a second, temp-folder environment for Private windows. Both point at a
-  **bundled Fixed Version runtime** (via the `WebView2.Runtime.X64` NuGet
-  package) instead of the system-wide Evergreen Runtime — see "Why a bundled
-  WebView2 runtime?" below.
-- **Microsoft.Data.Sqlite** — `history` and `bookmarks` tables in
-  `%AppData%\Remi Browser\browser.db`
-- **System.Text.Json** — `settings.json` in the same folder (search engine,
-  Secure DNS, downloads, appearance, new-tab background, window state)
+## Meet Remi
 
-## Project layout
+Remi Browser is a small, independent web browser for Windows — built by hand,
+not forked from a template. It runs on the same Chromium engine that powers
+the browsers you already know, but everything around it — the window, the
+tabs, the settings, the little decisions about how things look and feel — is
+Remi's own.
 
-```
-src/
-  App.xaml(.cs)            App-lifetime services wiring (Settings/History/Bookmarks/...)
-  MainWindow.xaml(.cs)      Normal browser window: toolbar, tab strip, bookmark bar, content host
-  Models/                   Plain data types (BrowserTab, BookmarkItem, HistoryItem, ...)
-  Services/                 SettingsService, HistoryService, BookmarkService,
-                             WebViewEnvironmentService, SearchEngineService,
-                             DownloadService, UpdateService
-  Views/                    NewTabPage, LibraryPanel, SettingsWindow,
-                             PrivateWindow, BackgroundPickerWindow
-  Assets/                   App icon / logo / new-tab backgrounds (empty — add your own)
-installer/
-  setup.iss                 Inno Setup script (AppId is fixed — do not change it)
-.github/workflows/
-  build.yml                 CI: restore + build on every push/PR
-  release.yml               On tag `vX.Y.Z`: publish, compile installer, upload to GitHub Release
-```
+No bloat. No noise. Just a browser that feels like it was made for one
+person, not a billion.
 
-## Why a bundled WebView2 runtime?
+---
 
-Early builds relied on the system's Evergreen WebView2 Runtime
-(`browserExecutableFolder: null`). That failed to start on a Windows 11
-machine with `WebView2RuntimeNotFoundException` / *"Package dependency
-criteria could not be resolved"*, even though the Evergreen bootstrapper
-reported the runtime as already installed. Root cause: that machine had been
-debloated (AppX/framework packages like `Microsoft.VCLibs` removed), which
-breaks Evergreen's dependency resolution even though the runtime files
-themselves are present.
+## Why people are switching
 
-Fix: `RemiBrowser.csproj` references `WebView2.Runtime.X64`, a
-community-maintained NuGet package that repackages Microsoft's official Fixed
-Version runtime. It copies a `WebView2\` folder next to the exe on every
-build/publish — `WebViewEnvironmentService` points `browserExecutableFolder`
-at that folder when present, and falls back to the system Evergreen Runtime
-(`null`) only if it's missing (e.g. someone stripped it out of a local dev
-build). This makes distribution fully self-contained: no dependency on
-whatever the end user's Windows image does or doesn't have.
+### 🪟 A window that feels native, not borrowed
+A unified title bar, smooth window controls, and a maximize behavior that
+actually respects your monitor — no black gaps, no misaligned dialogs, no
+"almost right." Every window in Remi — the browser, Settings, Private
+mode — shares the same custom chrome.
 
-Trade-offs to know about:
-- The installer is ~150-250MB heavier because the runtime is bundled.
-- Unlike Evergreen, this runtime does **not** auto-update. To pick up newer
-  Chromium/security patches, bump the `WebView2.Runtime.X64` version in
-  `RemiBrowser.csproj` and cut a new release.
+### 🌗 Dark mode that goes all the way
+Not just the toolbar. Every checkbox, every dropdown, every text field —
+light or dark, the whole app commits to it. Follow Windows automatically, or
+choose your own.
 
-## App icon (fully automated)
+### 🔒 Private browsing, actually private
+A dedicated Private window with its own throwaway profile — nothing shared,
+nothing remembered, gone the moment you close it.
 
-`build.yml` and `release.yml` both have a "Generate app icon from source PNG"
-step: if `src/Assets/source/remi-logo-2000.png` exists, they install
-ImageMagick on the runner and generate `src/Assets/remi.ico` (16/32/48/64/128/256
-in one file) before `dotnet build`/`publish` runs. The `.ico` is **not**
-committed (see `.gitignore`) — it's always regenerated fresh from the PNG, so
-it can never go stale relative to the source logo. `ApplicationIcon` in the
-`.csproj` and `SetupIconFile` in `installer/setup.iss` both pick it up
-automatically once it exists; no manual step needed on a normal CI run.
+### 🔑 Passwords, handled quietly
+Remi notices when you sign in, offers to remember it, and fills it back in
+next time — encrypted locally, never sent anywhere it doesn't need to go.
 
-To change the logo, just replace `src/Assets/source/remi-logo-2000.png` (any
-size ≥512×512 works) — no other file needs editing.
+### 📌 A New Tab page that's actually yours
+Pin the sites you use, pick your own background, arrange it the way you
+think — not the way a template decided for you.
 
-Building locally without ever running CI: either run the same ImageMagick
-command by hand, or just build without it — both `ApplicationIcon` and
-`SetupIconFile` are conditioned on the file existing, so everything still
-compiles, just without a custom icon.
+### 🧭 Bookmarks & history that stay out of your way
+A library panel that's fast to search and easy to forget about — there when
+you need it, invisible when you don't.
 
-## Building locally
+### 🎨 Make it look like yours
+Custom accent colors, gradient backgrounds, and a settings panel you can
+actually search — type what you're looking for and it filters everything,
+instantly.
 
-Requires the .NET 8 SDK and Windows (WebView2/WPF are Windows-only).
+### 🔄 Stays current on its own
+Remi checks for new versions quietly in the background and can update itself
+without getting in your way.
 
-```
-dotnet restore src/RemiBrowser.csproj
-dotnet build src/RemiBrowser.csproj -c Release
-dotnet run --project src/RemiBrowser.csproj
-```
+---
 
-## Releasing
+## Under the hood
 
-Push a tag matching `v*.*.*` (e.g. `v0.1.0`). `release.yml` will:
-1. `dotnet publish` a self-contained `win-x64` build
-2. Compile `installer/setup.iss` with Inno Setup, versioned from the tag
-3. Upload `RemiBrowser-Setup-<version>.exe` to a new GitHub Release
+Remi runs on **WebView2** — the same rendering engine as modern Edge and
+Chrome — bundled directly into the app, not borrowed from whatever happens
+to be installed on your machine. That means Remi starts the same way on
+every machine, every time, regardless of what Windows image it's running on.
 
-`UpdateService` polls `GET /repos/vinhdubaii/remi-browser/releases/latest`
-and, when a newer tag is found, can download and silently run that installer
-(`/VERYSILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS`).
+Everything else — the interface, the tab model, the settings system, the
+theming engine — is custom-built in C# and WPF, designed to feel
+purpose-made rather than assembled from parts.
 
-## Recent fixes (this round)
+---
 
-- **Maximize bug fixed properly** — the previous "fix" (margin compensation
-  via `SystemParameters.WindowResizeBorderThickness` +
-  `WindowNonClientFrameThickness`) overcompensated and caused visible black
-  gaps above the toolbar and a sliver on the left edge, plus owned dialogs
-  (Settings, Customize Background) rendering misaligned. Replaced with the
-  actually-correct technique: `Interop/WindowMaximizeFix.cs` hooks
-  `WM_GETMINMAXINFO` (the same message native maximized windows use) so
-  Windows itself sizes/positions the window to exactly the monitor's work
-  area. No margin/padding hack needed anywhere anymore — applied to
-  `MainWindow`, `PrivateWindow`, `SettingsWindow`, and
-  `BackgroundPickerWindow`.
-- **Dark mode now actually covers every control** — previously only the
-  hand-styled toolbar/sidebar elements re-colored; standard `ComboBox`,
-  `TextBox`, `CheckBox`, `RadioButton`, `Button`, and plain `TextBlock`
-  elements kept their default (light/black-text) rendering, and
-  `SettingsWindow`/`BackgroundPickerWindow` kept the OS-native (always-light)
-  title bar. Fixed by: (1) `Themes/ControlStyles.xaml` — implicit
-  (`TargetType`-only, no `x:Key`) styles for those control types, so every
-  instance in the app themes automatically; (2) giving `SettingsWindow` and
-  `BackgroundPickerWindow` the same custom `WindowChrome` title bar as
-  `MainWindow`. One deliberate exception: New Tab Page site tiles keep a
-  hardcoded white card with dark text regardless of theme (matches
-  Chrome/Edge/Safari — top-site favicons assume a light card), so those two
-  `TextBlock`s opt out of the new implicit dark-text default explicitly.
+## Where it's headed
 
-## Recent fixes (previous round)
+Remi is still early, and still growing. On the horizon:
 
-- **About dialog crash** (`WebView2RuntimeNotFoundException`) — it called the
-  parameterless `GetAvailableBrowserVersionString()`, which always looks for
-  the system Evergreen Runtime instead of the bundled Fixed Version runtime
-  every other environment uses. Fixed by passing
-  `WebViewEnvironmentService.FixedRuntimeFolder` explicitly.
-- **Maximized-window clipping** — classic `WindowChrome` + borderless-window
-  issue: Windows reserves an invisible overscan margin around a maximized
-  borderless window that WPF doesn't subtract automatically, so the toolbar/
-  tab strip/window buttons rendered partly off-screen. Fixed in both
-  `MainWindow` and `PrivateWindow` by reapplying
-  `SystemParameters.WindowResizeBorderThickness + WindowNonClientFrameThickness`
-  as the root Grid's margin on every `StateChanged`.
-- **Dark mode now actually applies** — colors used to be hardcoded directly
-  in `App.xaml`. They now live in `Themes/Light.xaml` / `Themes/Dark.xaml`
-  (same resource keys in both), swapped at runtime by `ThemeService.Apply(...)`
-  via `Application.Resources.MergedDictionaries`. Every color reference in
-  XAML was switched from `StaticResource` to `DynamicResource` so open windows
-  re-color immediately — no restart, unlike Secure DNS. `System` theme reads
-  Windows' own dark/light setting from the registry
-  (`AppsUseLightTheme` under `...\Themes\Personalize`).
-- **Settings redesigned Chromium-style** — left sidebar (General / Appearance
-  / Privacy & Security / Downloads / About) instead of one long scrolling
-  page, plus a search box: typing filters every category's field groups by
-  keyword and shows matches across all categories at once (like
-  `chrome://settings`'s search), collapsing empty categories.
-- **Renamed Loomis Browser → Remi Browser** — namespace, assembly name,
-  installer `AppId` was deliberately **left unchanged** (same GUID) so
-  existing installs still receive updates correctly instead of getting a
-  parallel "different app" install.
+- A fully custom right-click menu, styled to match the rest of the app
+- Support for browser extensions
+- Smarter tab management
+- A more capable Settings search
+- And a lot of small refinements along the way
 
-## Known gaps / next steps
+---
 
-- **Search engine management UI** (`SettingsWindow.ManageEnginesButton_Click`)
-  is a placeholder — adding/removing custom engines needs a small dialog.
-- **Top Sites "Remove"** context menu item is wired up visually but not
-  functional yet — needs a "hidden sites" list in `HistoryService`.
-- **Find in Page** menu item is stubbed — needs a small find bar over the
-  WebView2 content plus `CoreWebView2.Find` (or the standard workaround via
-  injected script, depending on the WebView2 SDK version in use).
-- **Update notification banner** — `UpdateService.UpdateAvailable` fires but
-  `MainWindow` doesn't yet show the "A new version is available" banner UI.
-- **Tab drag-to-reorder** isn't implemented; tabs are click-to-activate only.
-- Only one tab per Private window for now (kept intentionally simple, per
-  earlier scoping) — multi-tab private windows are a possible follow-up.
-- Settings search filters by keyword tags on each field group (hand-written
-  per field), not a generic full-text scan — new fields need a `Tag="..."`
-  with relevant keywords added for search to find them.
+## Open source, MIT licensed
+
+Remi Browser is free and open source under the [MIT License](LICENSE).
+Take it apart, learn from it, build on it.
+
+<div align="center">
+
+**[⭐ github.com/vinhdubaii/remi-browser](https://github.com/vinhdubaii/remi-browser)**
+
+</div>
