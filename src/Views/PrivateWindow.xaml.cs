@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using Microsoft.Web.WebView2.Core;
 using RemiBrowser.Interop;
 using RemiBrowser.Models;
@@ -203,16 +204,26 @@ namespace RemiBrowser.Views
                     Foreground = Brushes.White
                 });
 
+                var closeIcon = new Path
+                {
+                    Width = 10,
+                    Height = 10,
+                    Stretch = Stretch.Uniform,
+                    Stroke = Brushes.White,
+                    StrokeThickness = 1.5,
+                    StrokeStartLineCap = PenLineCap.Round,
+                    StrokeEndLineCap = PenLineCap.Round,
+                    Data = Geometry.Parse("M6,6L18,18M18,6L6,18")
+                };
+
                 var closeButton = new Button
                 {
-                    Content = "✕",
+                    Content = closeIcon,
                     Width = 20,
                     Height = 20,
                     Margin = new Thickness(6, 0, 0, 0),
                     Background = Brushes.Transparent,
                     BorderThickness = new Thickness(0),
-                    Foreground = Brushes.White,
-                    FontSize = 10,
                     Cursor = Cursors.Hand
                 };
                 closeButton.Click += (_, _) => CloseTab(tab);
@@ -338,7 +349,9 @@ namespace RemiBrowser.Views
         private void MaximizeButton_Click(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-            MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "▢";
+            MaximizeIconPath.Data = Geometry.Parse(WindowState == WindowState.Maximized
+                ? "M6,9 L15,9 L15,18 L6,18 Z M9,6 L18,6 L18,15 L15,15 L15,9 L9,9 Z"   // restore: two overlapping squares
+                : "M6,6 L18,6 L18,18 L6,18 Z");                                       // maximize: single square
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();

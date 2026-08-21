@@ -69,7 +69,7 @@
                  Themes gradient behind the toolbar shows through softly while typed
                  text stays legible in both Light and Dark mode — see
                  Themes/Light.xaml + Dark.xaml's AddressPillOverlayBrush. -->
-            <Border Grid.Column="1" Background="{DynamicResource AddressPillOverlayBrush}" CornerRadius="16" Height="32"
+            <Border Grid.Column="1" Background="{DynamicResource AddressPillOverlayBrush}" CornerRadius="16" MinHeight="32"
                     Margin="60,0,60,0" VerticalAlignment="Center">
                 <Grid>
                     <Grid.ColumnDefinitions>

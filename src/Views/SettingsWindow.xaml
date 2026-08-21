@@ -56,7 +56,7 @@
                            Margin="16,16,16,10" Foreground="{DynamicResource TextPrimaryBrush}"/>
 
                 <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceBrush}" CornerRadius="14"
-                        Height="30" Margin="12,0,12,12">
+                        MinHeight="30" Margin="12,0,12,12">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>

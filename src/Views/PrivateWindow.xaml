@@ -64,7 +64,7 @@
                 </Button>
             </StackPanel>
 
-            <Border Grid.Column="1" Background="#33FFFFFF" CornerRadius="16" Height="32"
+            <Border Grid.Column="1" Background="#33FFFFFF" CornerRadius="16" MinHeight="32"
                     Margin="60,0,60,0" VerticalAlignment="Center">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -106,10 +106,33 @@
                 </Button>
             </StackPanel>
 
+            <!-- Window controls: vector Path icons (not text Content) on purpose.
+                 A string Content gets wrapped by WPF in an auto-generated TextBlock,
+                 and Themes/ControlStyles.xaml has an implicit (no x:Key) TextBlock
+                 style that force-sets Foreground to the DynamicResource theme brush.
+                 That implicit style silently overrode the "White" set on the Button
+                 itself (Style Setters on the TextBlock beat inherited Foreground from
+                 its Button parent), so these 3 buttons turned near-black in Light
+                 mode and vanished against this window's always-dark background. Path
+                 icons set Stroke directly on the Path, so no TextBlock is involved
+                 and nothing can override the hardcoded white. -->
             <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="4,0,4,0">
-                <Button Style="{StaticResource ChromeIconButton}" Foreground="White" Click="MinimizeButton_Click" Content="—" ToolTip="Minimize"/>
-                <Button x:Name="MaximizeButton" Style="{StaticResource ChromeIconButton}" Foreground="White" Click="MaximizeButton_Click" Content="▢" ToolTip="Maximize"/>
-                <Button Style="{StaticResource CloseButton}" Foreground="White" Click="CloseButton_Click" Content="✕" ToolTip="Close"/>
+                <Button Style="{StaticResource ChromeIconButton}" Click="MinimizeButton_Click" ToolTip="Minimize">
+                    <Path Width="14" Height="14" Stretch="Uniform"
+                          Stroke="White" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Data="M5,12L19,12"/>
+                </Button>
+                <Button x:Name="MaximizeButton" Style="{StaticResource ChromeIconButton}" Click="MaximizeButton_Click" ToolTip="Maximize">
+                    <Path x:Name="MaximizeIconPath" Width="14" Height="14" Stretch="Uniform"
+                          Fill="Transparent" Stroke="White" StrokeThickness="1.5"
+                          StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Data="M6,6 L18,6 L18,18 L6,18 Z"/>
+                </Button>
+                <Button Style="{StaticResource CloseButton}" Click="CloseButton_Click" ToolTip="Close">
+                    <Path Width="14" Height="14" Stretch="Uniform"
+                          Stroke="White" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Data="M6,6L18,18M18,6L6,18"/>
+                </Button>
             </StackPanel>
         </Grid>
 

@@ -12,7 +12,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>RemiBrowser</AssemblyName>
     <RootNamespace>RemiBrowser</RootNamespace>
-    <Version>0.5.0</Version>
+    <Version>0.4.7</Version>
     <Product>Remi Browser</Product>
     <Company>Lidora Studio</Company>
     <Copyright>Copyright © vinhdubaii</Copyright>
