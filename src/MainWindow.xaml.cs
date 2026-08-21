@@ -414,15 +414,15 @@ namespace RemiBrowser
             AddressBarTextBox.Text = tab.IsNewTabPage ? string.Empty : tab.Url;
             BackButton.IsEnabled = tab.CanGoBack;
             ForwardButton.IsEnabled = tab.CanGoForward;
-            LockIcon.Text = tab.Url.StartsWith("https://") ? "🔒" : "";
+            LockIcon.Visibility = tab.Url.StartsWith("https://") ? Visibility.Visible : Visibility.Collapsed;
             _ = UpdateBookmarkStarAsync(tab.Url);
         }
 
         private async System.Threading.Tasks.Task UpdateBookmarkStarAsync(string url)
         {
-            if (string.IsNullOrEmpty(url)) { BookmarkStarButton.Content = "☆"; return; }
+            if (string.IsNullOrEmpty(url)) { BookmarkStarPath.Fill = Brushes.Transparent; return; }
             var bookmarked = await App.Bookmarks.IsBookmarkedAsync(url);
-            BookmarkStarButton.Content = bookmarked ? "★" : "☆";
+            BookmarkStarPath.Fill = bookmarked ? (Brush)FindResource("AccentBrush") : Brushes.Transparent;
         }
 
         private void AddressBarTextBox_GotFocus(object sender, RoutedEventArgs e) => AddressBarTextBox.SelectAll();
@@ -566,7 +566,25 @@ namespace RemiBrowser
             var zoomInButton = new Button { Content = "＋", Style = smallIconStyle, Width = 26, Height = 26, ToolTip = "Zoom in (Ctrl++)" };
             zoomInButton.Click += (_, _) => { ZoomIn(); RefreshPercentText(); };
 
-            var fullScreenButton = new Button { Content = "⛶", Style = smallIconStyle, Width = 26, Height = 26, ToolTip = "Full screen (F11)" };
+            var fullScreenButton = new Button
+            {
+                Content = new System.Windows.Shapes.Path
+                {
+                    Width = 14, Height = 14, Stretch = Stretch.Uniform,
+                    Fill = Brushes.Transparent, Stroke = textBrush,
+                    StrokeThickness = 1.5, StrokeLineJoin = PenLineJoin.Round,
+                    StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+                    Data = Geometry.Parse(
+                        "M6,9.99739C6.01447,8.29083 6.10921,7.35004 6.72963,6.72963C7.35004,6.10921 8.29083,6.01447 9.99739,6" +
+                        "M6,14.0007C6.01447,15.7072 6.10921,16.648 6.72963,17.2684C7.35004,17.8888 8.29083,17.9836 9.99739,17.998" +
+                        "M17.9976,9.99739C17.9831,8.29083 17.8883,7.35004 17.2679,6.72963C16.6475,6.10921 15.7067,6.01447 14.0002,6" +
+                        "M17.9976,14.0007C17.9831,15.7072 17.8883,16.648 17.2679,17.2684C16.6475,17.8888 15.7067,17.9836 14.0002,17.998" +
+                        "M22,12C22,16.714 22,19.0711 20.5355,20.5355C19.0711,22 16.714,22 12,22C7.28595,22 4.92893,22 3.46447,20.5355" +
+                        "C2,19.0711 2,16.714 2,12C2,7.28595 2,4.92893 3.46447,3.46447C4.92893,2 7.28595,2 12,2C16.714,2 19.0711,2 20.5355,3.46447" +
+                        "C21.5093,4.43821 21.8356,5.80655 21.9449,8")
+                },
+                Style = smallIconStyle, Width = 26, Height = 26, ToolTip = "Full screen (F11)"
+            };
             fullScreenButton.Click += (_, _) => ToggleFullScreen();
 
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 2, 6, 2), VerticalAlignment = VerticalAlignment.Center };

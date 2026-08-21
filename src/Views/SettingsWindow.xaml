@@ -27,7 +27,8 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="14,0" VerticalAlignment="Center">
-                <TextBlock Text="⚙" FontSize="14" Margin="0,0,8,0" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <Path Style="{StaticResource SidebarIconPath}" Width="14" Height="14" Margin="0,0,8,0"
+                      Data="M15,12A3,3 0 1 1 9,12A3,3 0 1 1 15,12 M3.66122,10.6392C4.13377,10.9361 4.43782,11.4419 4.43782,11.9999C4.43781,12.558 4.13376,13.0638 3.66122,13.3607C3.33966,13.5627 3.13248,13.7242 2.98508,13.9163C2.66217,14.3372 2.51966,14.869 2.5889,15.3949C2.64082,15.7893 2.87379,16.1928 3.33973,16.9999C3.80568,17.8069 4.03865,18.2104 4.35426,18.4526C4.77508,18.7755 5.30694,18.918 5.83284,18.8488C6.07287,18.8172 6.31628,18.7185 6.65196,18.5411C7.14544,18.2803 7.73558,18.2699 8.21895,18.549C8.70227,18.8281 8.98827,19.3443 9.00912,19.902C9.02332,20.2815 9.05958,20.5417 9.15224,20.7654C9.35523,21.2554 9.74458,21.6448 10.2346,21.8478C10.6022,22 11.0681,22 12,22C12.9319,22 13.3978,22 13.7654,21.8478C14.2554,21.6448 14.6448,21.2554 14.8478,20.7654C14.9404,20.5417 14.9767,20.2815 14.9909,19.9021C15.0117,19.3443 15.2977,18.8281 15.7811,18.549C16.2644,18.27 16.8545,18.2804 17.3479,18.5412C17.6837,18.7186 17.9271,18.8173 18.1671,18.8489C18.693,18.9182 19.2249,18.7756 19.6457,18.4527C19.9613,18.2106 20.1943,17.807 20.6603,17C20.8677,16.6407 21.029,16.3614 21.1486,16.1272 M20.3387,13.3608C19.8662,13.0639 19.5622,12.5581 19.5621,12.0001C19.5621,11.442 19.8662,10.9361 20.3387,10.6392C20.6603,10.4372 20.8674,10.2757 21.0148,10.0836C21.3377,9.66278 21.4802,9.13092 21.411,8.60502C21.3591,8.2106 21.1261,7.80708 20.6601,7.00005C20.1942,6.19301 19.9612,5.7895 19.6456,5.54732C19.2248,5.22441 18.6929,5.0819 18.167,5.15113C17.927,5.18274 17.6836,5.2814 17.3479,5.45883C16.8544,5.71964 16.2643,5.73004 15.781,5.45096C15.2977,5.1719 15.0117,4.6557 14.9909,4.09803C14.9767,3.71852 14.9404,3.45835 14.8478,3.23463C14.6448,2.74458 14.2554,2.35523 13.7654,2.15224C13.3978,2 12.9319,2 12,2C11.0681,2 10.6022,2 10.2346,2.15224C9.74458,2.35523 9.35523,2.74458 9.15224,3.23463C9.05958,3.45833 9.02332,3.71848 9.00912,4.09794C8.98826,4.65566 8.70225,5.17191 8.21891,5.45096C7.73557,5.73002 7.14548,5.71959 6.65205,5.4588C6.31633,5.28136 6.0729,5.18269 5.83285,5.15108C5.30695,5.08185 4.77509,5.22436 4.35427,5.54727C4.03866,5.78945 3.80569,6.19297 3.33974,7C3.13231,7.35929 2.97105,7.63859 2.85138,7.87273"/>
                 <TextBlock Text="Settings" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}"/>
             </StackPanel>
 
@@ -61,8 +62,9 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="🔍" FontSize="11" Margin="10,0,4,0"
-                                   VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <Path Grid.Column="0" Style="{StaticResource SidebarIconPath}" Width="12" Height="12" Margin="10,0,4,0"
+                              VerticalAlignment="Center" Stroke="{DynamicResource TextSecondaryBrush}"
+                              Data="M20,20L22,22 M6.75,3.27093C8.14732,2.46262 9.76964,2 11.5,2C16.7467,2 21,6.25329 21,11.5C21,16.7467 16.7467,21 11.5,21C6.25329,21 2,16.7467 2,11.5C2,9.76964 2.46262,8.14732 3.27093,6.75"/>
                         <TextBox x:Name="SearchBox" Grid.Column="1" Background="Transparent" BorderThickness="0"
                                  VerticalContentAlignment="Center" FontSize="12"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
@@ -72,23 +74,72 @@
 
                 <StackPanel x:Name="SidebarNav" DockPanel.Dock="Top" Margin="0,4,0,0">
                     <RadioButton x:Name="NavSearchEngine" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 IsChecked="True" Checked="Nav_Checked" Content="Search engine"/>
+                                 IsChecked="True" Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource SidebarIconPath}" Margin="0,0,10,0"
+                                  Data="M20,20L22,22 M6.75,3.27093C8.14732,2.46262 9.76964,2 11.5,2C16.7467,2 21,6.25329 21,11.5C21,16.7467 16.7467,21 11.5,21C6.25329,21 2,16.7467 2,11.5C2,9.76964 2.46262,8.14732 3.27093,6.75"/>
+                            <TextBlock Text="Search engine" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="NavAppearance" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 Checked="Nav_Checked" Content="Appearance"/>
+                                 Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource SidebarIconPath}" Margin="0,0,10,0"
+                                  Data="M2,12.0261C2,17.1723 5.86713,21.413 10.8468,21.9863C11.5816,22.0709 12.2938,21.7576 12.8168,21.2333C13.4703,20.5781 13.4703,19.5159 12.8168,18.8607C12.2938,18.3364 11.8674,17.5541 12.2619,16.9268C13.8385,14.4192 22,20.178 22,12.0261C22,6.48884 17.5228,2 12,2C6.47715,2 2,6.48884 2,12.0261Z"/>
+                            <TextBlock Text="Appearance" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="NavPrivacy" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 Checked="Nav_Checked" Content="Privacy &amp; Security"/>
+                                 Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource SidebarIconPath}" Margin="0,0,10,0"
+                                  Data="M3,10.4167C3,7.21907 3,5.62028 3.37752,5.08241C3.75503,4.54454 5.25832,4.02996 8.26491,3.00079L8.83772,2.80472C10.405,2.26824 11.1886,2 12,2C12.8114,2 13.595,2.26824 15.1623,2.80472L15.7351,3.00079C18.7417,4.02996 20.245,4.54454 20.6225,5.08241C21,5.62028 21,7.21907 21,10.4167C21,10.8996 21,11.4234 21,11.9914C21,14.4963 20.1632,16.4284 19,17.9041 M3.19284,14C4.05026,18.2984 7.57641,20.5129 9.89856,21.5273C10.62,21.8424 10.9807,22 12,22C13.0193,22 13.38,21.8424 14.1014,21.5273C14.6796,21.2747 15.3324,20.9478 16,20.5328"/>
+                            <TextBlock Text="Privacy &amp; Security" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="NavAutofillPasswords" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 Checked="Nav_Checked" Content="Autofill and passwords"/>
+                                 Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource SidebarIconPath}" Margin="0,0,10,0"
+                                  Data="M2,11.9899C2,16.7087 2,19.0681 3.46594,20.5341C4.93188,22 7.29127,22 12.0101,22C16.7288,22 19.0882,22 20.5542,20.5341C21.6692,19.419 21.9361,17.787 22,14.993 M9.00704,2C6.21298,2.06388 4.58099,2.33078 3.46594,3.44584C2.48914,4.42263 2.16321,5.79612 2.05446,8"/>
+                            <TextBlock Text="Autofill and passwords" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="NavDefaultBrowser" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 Checked="Nav_Checked" Content="Default browser"/>
+                                 Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource SidebarIconPath}" Margin="0,0,10,0"
+                                  Data="M9.5,14.4L10.9286,16L14.5,12 M2,11.9997C2,7.28562 2,4.9286 3.46447,3.46413C4.70529,2.22331 6.58687,2.03382 10,2.00488M22,11.9997C22,7.28562 22,4.9286 20.5355,3.46413C19.2947,2.22331 17.4131,2.03382 14,2.00488 M10,22C7.19974,22 5.79961,22 4.73005,21.455C3.78924,20.9757 3.02433,20.2108 2.54497,19.27C2,18.2004 2,16.8003 2,14C2,11.1997 2,9.79961 2.54497,8.73005C3.02433,7.78924 3.78924,7.02433 4.73005,6.54497C5.79961,6 7.19974,6 10,6H14C16.8003,6 18.2004,6 19.27,6.54497C20.2108,7.02433 20.9757,7.78924 21.455,8.73005C22,9.79961 22,11.1997 22,14C22,16.8003 22,18.2004 21.455,19.27C20.9757,20.2108 20.2108,20.9757 19.27,21.455C18.2004,22 16.8003,22 14,22"/>
+                            <TextBlock Text="Default browser" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="NavOnStartup" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 Checked="Nav_Checked" Content="On startup"/>
+                                 Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource SidebarIconPath}" Margin="0,0,10,0"
+                                  Fill="{DynamicResource TextPrimaryBrush}" Stroke="{x:Null}"
+                                  Data="M12.75,2C12.75,1.58579 12.4142,1.25 12,1.25C11.5858,1.25 11.25,1.58579 11.25,2V6C11.25,6.41421 11.5858,6.75 12,6.75C12.4142,6.75 12.75,6.41421 12.75,6V2Z M8.7919,4.39678C9.17345,4.23557 9.35208,3.79557 9.19087,3.41402C9.02966,3.03246 8.58966,2.85384 8.2081,3.01505C4.70832,4.49372 2.25,7.95891 2.25,12C2.25,17.3848 6.61522,21.75 12,21.75C17.3848,21.75 21.75,17.3848 21.75,12C21.75,7.95891 19.2917,4.49372 15.7919,3.01505C15.4103,2.85384 14.9703,3.03246 14.8091,3.41402C14.6479,3.79557 14.8265,4.23557 15.2081,4.39678C18.1722,5.64913 20.25,8.58279 20.25,12C20.25,16.5564 16.5563,20.25 12,20.25C7.44365,20.25 3.75,16.5564 3.75,12C3.75,8.58279 5.82779,5.64913 8.7919,4.39678Z"/>
+                            <TextBlock Text="On startup" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="NavDownloads" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 Checked="Nav_Checked" Content="Downloads"/>
+                                 Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource SidebarIconPath}" Margin="0,0,10,0"
+                                  Data="M12,3V16M12,16L16,11.625M12,16L8,11.625 M15,21H9C6.17157,21 4.75736,21 3.87868,20.1213C3,19.2426 3,17.8284 3,15M21,15C21,17.8284 21,19.2426 20.1213,20.1213C19.8215,20.4211 19.4594,20.6186 19,20.7487"/>
+                            <TextBlock Text="Downloads" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                     <RadioButton x:Name="NavCustomThemes" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
                                  Checked="Nav_Checked" Content="Custom Themes"/>
                     <RadioButton x:Name="NavAbout" GroupName="SettingsNav" Style="{StaticResource SettingsSidebarItem}"
-                                 Checked="Nav_Checked" Content="About"/>
+                                 Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Style="{StaticResource SidebarIconPath}" Margin="0,0,10,0"
+                                  Data="M4,6V19C4,20.6569 5.34315,22 7,22H17C18.6569,22 20,20.6569 20,19V9C20,7.34315 18.6569,6 17,6H4ZM4,6V5 M8,12H16 M8,15.5H13.5"/>
+                            <TextBlock Text="About" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                 </StackPanel>
             </DockPanel>
         </Border>
