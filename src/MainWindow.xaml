@@ -70,7 +70,7 @@
                  text stays legible in both Light and Dark mode — see
                  Themes/Light.xaml + Dark.xaml's AddressPillOverlayBrush. -->
             <Border Grid.Column="1" Background="{DynamicResource AddressPillOverlayBrush}" CornerRadius="16" Height="32"
-                    Margin="20,0,20,0" VerticalAlignment="Center">
+                    Margin="60,0,60,0" VerticalAlignment="Center">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
