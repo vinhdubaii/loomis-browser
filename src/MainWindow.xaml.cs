@@ -272,7 +272,7 @@ namespace RemiBrowser
                 tab.CanGoBack = tab.WebView.CoreWebView2.CanGoBack;
                 tab.CanGoForward = tab.WebView.CoreWebView2.CanGoForward;
 
-                if (e.IsSuccess && !tab.IsPrivate)
+                if (e.IsSuccess && !tab.IsPrivate && tab.Url != "about:blank")
                 {
                     await App.History.AddVisitAsync(tab.Url, tab.Title, tab.FaviconUrl);
                 }
@@ -292,6 +292,26 @@ namespace RemiBrowser
             tab.WebView.CoreWebView2.FaviconChanged += (_, _) =>
             {
                 tab.FaviconUrl = tab.WebView.CoreWebView2.FaviconUri;
+            };
+
+            // Without this handler, WebView2 falls back to its own default
+            // behavior for target="_blank" links / window.open() (including
+            // Ctrl+Click): it spawns a bare, chrome-less native window of its
+            // own instead of a tab in this window. Handling the event and
+            // opening a tab here is what makes those links behave like a
+            // normal browser tab instead.
+            tab.WebView.CoreWebView2.NewWindowRequested += async (_, e) =>
+            {
+                e.Handled = true;
+                var deferral = e.GetDeferral();
+                try
+                {
+                    await CreateNewTabAsync(e.Uri);
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
             };
         }
 
@@ -441,6 +461,11 @@ namespace RemiBrowser
             {
                 _activeTab.IsNewTabPage = true;
                 _activeTab.WebView.Visibility = Visibility.Collapsed;
+                // Merely hiding the WebView leaves whatever page was open still
+                // fully alive underneath (video/audio playing, JS timers, network
+                // activity) — navigating it to about:blank actually tears down
+                // that page's document/JS context instead of just hiding it.
+                _activeTab.WebView.CoreWebView2?.Navigate("about:blank");
                 ShowOrHideNewTabPage(_activeTab);
                 AddressBarTextBox.Text = string.Empty;
                 return;

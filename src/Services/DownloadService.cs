@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Win32;
 using RemiBrowser.Models;
 
 namespace RemiBrowser.Services
@@ -35,9 +36,48 @@ namespace RemiBrowser.Services
 
             if (settings.AskWhereToSaveEachFile)
             {
-                // WebView2 will show its own native "Save As" dialog when we don't
-                // override ResultFilePath and leave Cancel = false / Handled = false.
-                // Nothing further to do here; we still track it below via the item.
+                // WebView2 does NOT show its own "where to save" picker by
+                // default — left alone (ResultFilePath untouched, Handled
+                // false) it silently saves straight into its own default
+                // Downloads folder with no prompt at all, which is exactly
+                // the "images/videos auto-download without asking" bug. To
+                // actually ask, the app has to show its own SaveFileDialog
+                // here and hand the chosen path back via ResultFilePath.
+                // A Deferral is required because showing UI takes this
+                // handler outside the single synchronous tick WebView2
+                // otherwise expects it to finish in.
+                var deferral = e.GetDeferral();
+
+                var suggestedName = Path.GetFileName(e.ResultFilePath);
+                var suggestedDirectory = Path.GetDirectoryName(e.ResultFilePath);
+
+                var dialog = new SaveFileDialog
+                {
+                    FileName = suggestedName,
+                    InitialDirectory = !string.IsNullOrEmpty(suggestedDirectory) && Directory.Exists(suggestedDirectory)
+                        ? suggestedDirectory
+                        : settings.Location,
+                    Filter = "All Files (*.*)|*.*"
+                };
+
+                // DownloadStarting fires on the UI thread that owns this
+                // CoreWebView2 in practice, but routing the dialog through
+                // the Dispatcher keeps this safe even if that ever changes.
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    if (dialog.ShowDialog() == true)
+                        e.ResultFilePath = dialog.FileName;
+                    else
+                        e.Cancel = true;
+                });
+
+                // We already handled the "where to save" decision ourselves,
+                // so suppress WebView2's own default download flyout too.
+                e.Handled = true;
+                deferral.Complete();
+
+                if (e.Cancel)
+                    return;
             }
             else
             {

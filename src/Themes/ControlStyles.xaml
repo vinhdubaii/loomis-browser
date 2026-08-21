@@ -59,7 +59,13 @@
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource ChromeBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="6,4"/>
+        <!-- Bottom padding is deliberately larger than the rest: PART_ContentHost
+             below is a bare ScrollViewer, which clips its content to its own
+             viewport. That viewport is sized off the line's baseline + ascent,
+             so descenders (the part of g/y/j/q/p that dips below the baseline)
+             can poke 1-2px past it and get clipped. The extra bottom padding
+             gives that descender room before the ScrollViewer's clip boundary. -->
+        <Setter Property="Padding" Value="6,4,6,6"/>
         <Setter Property="SelectionBrush" Value="{DynamicResource AccentBrush}"/>
         <Setter Property="Template">
             <Setter.Value>

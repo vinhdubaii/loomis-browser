@@ -24,7 +24,7 @@
                 <RadioButton x:Name="BookmarksTabButton" Content="Bookmarks" GroupName="LibraryTab"
                              IsChecked="True" Margin="0,0,12,0" Checked="Tab_Checked"/>
                 <RadioButton x:Name="HistoryTabButton" Content="History" GroupName="LibraryTab"
-                             Margin="0,0,12,0" Checked="Tab_Checked"/>
+                             Margin="0,0,12,0" Checked="Tab_Checked"/> <!-- hidden in private windows, see IsPrivateMode -->
                 <RadioButton x:Name="DownloadsTabButton" Content="Downloads" GroupName="LibraryTab"
                              Checked="Tab_Checked"/>
             </StackPanel>
