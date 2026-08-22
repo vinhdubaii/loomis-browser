@@ -134,6 +134,39 @@ namespace RemiBrowser.Views
                     deferral.Complete();
                 }
             };
+
+            // Same full-replacement custom context menu as MainWindow (guide
+            // Part 2) - reuses the same ContextMenuBuilder/ContextMenuHost.
+            // OpenInNewTab points at this window's own CreateNewTabAsync, so
+            // "Open link in new window" / "Search with..." land in another
+            // private tab rather than leaking into a normal-browsing tab.
+            tab.WebView.CoreWebView2.ContextMenuRequested += async (_, e) =>
+            {
+                e.Handled = true;
+                var deferral = e.GetDeferral();
+                try
+                {
+                    var host = new ContextMenuHost
+                    {
+                        WebView = tab.WebView,
+                        OwnerWindow = this,
+                        OpenInNewTab = url => _ = CreateNewTabAsync(url)
+                    };
+
+                    var menu = await RemiBrowser.Services.ContextMenuBuilder.BuildMenuAsync(
+                        host, e.ContextMenuTarget, new Point(e.Location.X, e.Location.Y));
+
+                    menu.PlacementTarget = tab.WebView;
+                    menu.Placement = System.Windows.Controls.Primitives.PlacementMode.RelativePoint;
+                    menu.HorizontalOffset = e.Location.X;
+                    menu.VerticalOffset = e.Location.Y;
+                    menu.IsOpen = true;
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
+            };
         }
 
         private void SetActiveTab(BrowserTab tab)

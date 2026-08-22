@@ -12,7 +12,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>RemiBrowser</AssemblyName>
     <RootNamespace>RemiBrowser</RootNamespace>
-    <Version>0.5.2</Version>
+    <Version>0.5.1</Version>
     <Product>Remi Browser</Product>
     <Company>Lidora Studio</Company>
     <Copyright>Copyright © vinhdubaii</Copyright>
@@ -26,7 +26,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
+    <!-- Bumped 2026-08-22: was 1.0.2792.45 (pinned to Chromium ~130, Aug 2024).
+         1.0.4129.50 is the current Release/stable SDK as of this bump - not a
+         -prerelease build, since this app ships to real users. Keep this and
+         WebView2.Runtime.X64 below in sync: each SDK release's notes state
+         the minimum Runtime version it needs (see
+         https://aka.ms/webviewrelease) - 1.0.4129.50 lines up with Runtime
+         151, which is why the pin below is also 151.x. -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.8" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
 
@@ -38,8 +45,14 @@
          Fixed Version .cab as NuGet; bump the Version here to pick up a newer
          Chromium build. It copies its "WebView2\" folder to the output/publish
          directory automatically — no extra MSBuild wiring needed. It is large
-         (~250MB), so first restore will take a while; this is expected. -->
-    <PackageReference Include="WebView2.Runtime.X64" Version="131.0.2903.63" />
+         (~250MB), so first restore will take a while; this is expected.
+
+         Bumped 2026-08-22: was 131.0.2903.63 (Chromium 131, Nov 2024) -> now
+         151.0.4129.86, matching the current Microsoft Edge/WebView2 Runtime
+         release (151.0.4129.59, Aug. 7 2026) and the SDK version pinned
+         above. This community package has stayed current through 151.x, so
+         no fallback to manually managing the Fixed Version .cab was needed. -->
+    <PackageReference Include="WebView2.Runtime.X64" Version="151.0.4129.86" />
   </ItemGroup>
 
   <!-- UseWPF + UseWindowsForms both add implicit global usings for their

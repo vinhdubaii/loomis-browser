@@ -313,6 +313,43 @@ namespace RemiBrowser
                     deferral.Complete();
                 }
             };
+
+            // Fully replaces WebView2's default right-click menu with Remi's
+            // own (guide Part 2, "Decision made": full replacement, not a
+            // partial supplement). e.Handled = true suppresses the native
+            // menu entirely regardless of what happens below. A Deferral is
+            // required because ContextMenuBuilder needs to await one JS
+            // round-trip (reading the live loop/controls state for Video/
+            // Audio targets - not exposed on ContextMenuTarget itself, see
+            // ContextMenuBuilder's own notes) before it can finish building
+            // the menu.
+            tab.WebView.CoreWebView2.ContextMenuRequested += async (_, e) =>
+            {
+                e.Handled = true;
+                var deferral = e.GetDeferral();
+                try
+                {
+                    var host = new ContextMenuHost
+                    {
+                        WebView = tab.WebView,
+                        OwnerWindow = this,
+                        OpenInNewTab = url => _ = CreateNewTabAsync(url)
+                    };
+
+                    var menu = await Services.ContextMenuBuilder.BuildMenuAsync(
+                        host, e.ContextMenuTarget, new Point(e.Location.X, e.Location.Y));
+
+                    menu.PlacementTarget = tab.WebView;
+                    menu.Placement = System.Windows.Controls.Primitives.PlacementMode.RelativePoint;
+                    menu.HorizontalOffset = e.Location.X;
+                    menu.VerticalOffset = e.Location.Y;
+                    menu.IsOpen = true;
+                }
+                finally
+                {
+                    deferral.Complete();
+                }
+            };
         }
 
         private void SetActiveTab(BrowserTab tab)

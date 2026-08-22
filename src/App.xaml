@@ -18,6 +18,12 @@
                      elements. This dictionary itself never gets swapped; only the
                      brushes it references (DynamicResource) change with the theme. -->
                 <ResourceDictionary Source="Themes/ControlStyles.xaml"/>
+
+                <!-- 25 DataTemplate icon resources ("Icon.OpenLinkNewWindow", "Icon.CopyLink",
+                     etc.) for the page context menu - see Services/ContextMenuBuilder.cs and
+                     the top-of-file notes in ContextMenuIcons.xaml itself for why these are
+                     DataTemplates rather than plain Geometry resources. -->
+                <ResourceDictionary Source="Themes/ContextMenuIcons.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <!-- ===================== Shared button style for title bar / toolbar icons =====================
