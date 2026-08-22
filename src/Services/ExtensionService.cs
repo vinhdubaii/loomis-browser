@@ -96,7 +96,7 @@ namespace RemiBrowser.Services
             var live = await _profile.GetBrowserExtensionsAsync();
             var match = live.FirstOrDefault(e => e.Id == extensionId);
             if (match != null)
-                match.IsEnabled = enabled;
+                await match.EnableAsync(enabled);
         }
 
         public async Task RemoveAsync(string extensionId)
