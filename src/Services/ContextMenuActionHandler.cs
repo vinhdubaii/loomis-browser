@@ -243,19 +243,37 @@ namespace RemiBrowser.Services
         // ============================= Extension group =============================
 
         public static void AddToRemi(ContextMenuHost host, string pageUri) =>
-            RunSafe(() =>
+            RunSafe(async () =>
             {
-                // TODO: wire up to the Part 1 CRX acquisition pipeline
-                // (download -> strip header -> unzip -> AddBrowserExtensionAsync)
-                // once that service exists - this item only becomes reachable
-                // on a Chrome Web Store / Edge Add-ons detail page (see
-                // IsExtensionStorePage in ContextMenuBuilder), so it's safe
-                // to stub for now.
+                var extensionId = ExtractExtensionId(pageUri);
+                if (extensionId == null)
+                {
+                    MessageBox.Show(host.OwnerWindow,
+                        "Couldn't determine the extension ID from this page.",
+                        "Add to Remi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var store = pageUri.Contains("chromewebstore.google.com", StringComparison.OrdinalIgnoreCase)
+                    ? ExtensionStoreKind.ChromeWebStore
+                    : ExtensionStoreKind.EdgeAddons;
+
+                var installed = await App.Extensions.InstallFromStoreAsync(extensionId, store);
+
                 MessageBox.Show(host.OwnerWindow,
-                    "Extension installation isn't implemented yet.",
+                    $"\"{installed.Name}\" was installed.",
                     "Add to Remi", MessageBoxButton.OK, MessageBoxImage.Information);
-                return Task.CompletedTask;
             }, host, "Add to Remi");
+
+        // Same 32-char-id capture group already proven out in
+        // ContextMenuBuilder's ChromeWebStorePattern/EdgeAddonsPattern -
+        // duplicated here rather than re-deriving the ID logic from scratch.
+        private static string? ExtractExtensionId(string pageUri)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(pageUri,
+                @"/detail/[^/]+/([a-zA-Z0-9]{32})", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups[1].Value : null;
+        }
 
         // ============================= Trailing group =============================
 

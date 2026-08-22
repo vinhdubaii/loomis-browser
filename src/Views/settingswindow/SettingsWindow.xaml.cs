@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Web.WebView2.Core;
@@ -50,7 +52,7 @@ namespace RemiBrowser.Views
             _activeProfile = activeProfile;
             _currentTabUrls = currentTabUrls;
 
-            _allPanels = new List<StackPanel> { PanelSearchEngine, PanelAppearance, PanelPrivacy, PanelAutofillPasswords, PanelDefaultBrowser, PanelOnStartup, PanelDownloads, PanelCustomThemes, PanelAbout };
+            _allPanels = new List<StackPanel> { PanelSearchEngine, PanelAppearance, PanelPrivacy, PanelAutofillPasswords, PanelDefaultBrowser, PanelOnStartup, PanelDownloads, PanelCustomThemes, PanelExtensions, PanelAbout };
             _allFieldGroups = _allPanels.SelectMany(p => p.Children.OfType<Border>()).ToList();
 
             LoadFromSettings();
@@ -165,9 +167,13 @@ namespace RemiBrowser.Views
                 _ when ReferenceEquals(sender, NavOnStartup) => PanelOnStartup,
                 _ when ReferenceEquals(sender, NavDownloads) => PanelDownloads,
                 _ when ReferenceEquals(sender, NavCustomThemes) => PanelCustomThemes,
+                _ when ReferenceEquals(sender, NavExtensions) => PanelExtensions,
                 _ when ReferenceEquals(sender, NavAbout) => PanelAbout,
                 _ => PanelSearchEngine
             });
+
+            if (ReferenceEquals(sender, NavExtensions))
+                _ = RefreshExtensionsListAsync();
         }
 
         private void ShowOnlyPanel(StackPanel target)
@@ -297,6 +303,176 @@ namespace RemiBrowser.Views
         {
             base.OnActivated(e);
             if (IsLoaded) RefreshDefaultBrowserStatus();
+        }
+
+        // ============================= Extensions =============================
+
+        /// <summary>
+        /// Called from MainWindow.OpenSettingsToExtensions when a pinned
+        /// extension with no options page is clicked — switches to this
+        /// panel and, if an ID was given, scrolls to and briefly flashes
+        /// that extension's card.
+        /// </summary>
+        public void SelectExtensionsPanel(string? highlightExtensionId = null)
+        {
+            NavExtensions.IsChecked = true;
+            _ = RefreshExtensionsListAsync(highlightExtensionId);
+        }
+
+        private async Task RefreshExtensionsListAsync(string? highlightExtensionId = null)
+        {
+            var extensions = await App.Extensions.GetInstalledAsync();
+
+            ExtensionsList.Items.Clear();
+            NoExtensionsText.Visibility = extensions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            Border? cardToHighlight = null;
+            foreach (var ext in extensions)
+            {
+                var card = BuildExtensionCard(ext);
+                ExtensionsList.Items.Add(card);
+                if (highlightExtensionId != null && ext.Id == highlightExtensionId)
+                    cardToHighlight = card;
+            }
+
+            if (cardToHighlight != null)
+            {
+                Dispatcher.BeginInvoke(new Action(async () =>
+                {
+                    cardToHighlight.BringIntoView();
+                    var original = cardToHighlight.Background;
+                    cardToHighlight.Background = (System.Windows.Media.Brush)FindResource("SidebarSelectedBrush");
+                    await Task.Delay(900);
+                    cardToHighlight.Background = original;
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+        }
+
+        /// <summary>
+        /// Layout, top to bottom, mirroring chrome://extensions:
+        ///   [icon] Name  v{Version}                [Enable/Disable toggle]
+        ///   Description (if any)
+        ///   Permissions: storage, tabs, ...          (only if any)
+        ///   Site access: https://*.example.com/*, ... (only if any)
+        ///   [Remove]
+        /// </summary>
+        private Border BuildExtensionCard(InstalledExtension ext)
+        {
+            var content = new StackPanel();
+
+            // ---- Header row: icon, name, version, toggle ----
+            var header = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            if (ext.IconPath != null && File.Exists(ext.IconPath))
+            {
+                var icon = new Image
+                {
+                    Source = new System.Windows.Media.Imaging.BitmapImage(new Uri(ext.IconPath)),
+                    Width = 28,
+                    Height = 28,
+                    Margin = new Thickness(0, 0, 10, 0)
+                };
+                Grid.SetColumn(icon, 0);
+                header.Children.Add(icon);
+            }
+
+            var nameRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            nameRow.Children.Add(new TextBlock { Text = ext.Name, FontSize = 14, FontWeight = FontWeights.SemiBold });
+            nameRow.Children.Add(new TextBlock
+            {
+                Text = $"  v{ext.Version}",
+                FontSize = 11,
+                Foreground = (System.Windows.Media.Brush)FindResource("TextSecondaryBrush"),
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            Grid.SetColumn(nameRow, 1);
+            header.Children.Add(nameRow);
+
+            var enableToggle = new CheckBox
+            {
+                Style = (Style)FindResource("ExtensionToggleSwitch"),
+                IsChecked = ext.IsEnabled,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "Enable/disable this extension"
+            };
+            enableToggle.Click += async (_, _) => await App.Extensions.SetEnabledAsync(ext.Id, enableToggle.IsChecked == true);
+            Grid.SetColumn(enableToggle, 2);
+            header.Children.Add(enableToggle);
+
+            content.Children.Add(header);
+
+            // ---- Description ----
+            if (!string.IsNullOrWhiteSpace(ext.Description))
+            {
+                content.Children.Add(new TextBlock
+                {
+                    Text = ext.Description,
+                    FontSize = 12,
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = (System.Windows.Media.Brush)FindResource("TextSecondaryBrush"),
+                    Margin = new Thickness(0, 0, 0, 6)
+                });
+            }
+
+            // ---- Permissions ----
+            if (ext.Permissions.Count > 0)
+            {
+                content.Children.Add(new TextBlock
+                {
+                    Text = "Permissions: " + string.Join(", ", ext.Permissions),
+                    FontSize = 11,
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = (System.Windows.Media.Brush)FindResource("TextSecondaryBrush"),
+                    Margin = new Thickness(0, 0, 0, 2)
+                });
+            }
+
+            // ---- Site access ----
+            if (ext.SiteAccess.Count > 0)
+            {
+                content.Children.Add(new TextBlock
+                {
+                    Text = "Site access: " + string.Join(", ", ext.SiteAccess),
+                    FontSize = 11,
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = (System.Windows.Media.Brush)FindResource("TextSecondaryBrush"),
+                    Margin = new Thickness(0, 0, 0, 8)
+                });
+            }
+
+            // ---- Remove ----
+            var removeButton = new Button
+            {
+                Content = "Remove",
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(10, 4, 10, 4)
+            };
+            removeButton.Click += async (_, _) =>
+            {
+                var confirm = MessageBox.Show(this,
+                    $"Remove \"{ext.Name}\"? This can't be undone.",
+                    "Remove extension", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (confirm != MessageBoxResult.Yes) return;
+
+                await App.Extensions.RemoveAsync(ext.Id);
+                await RefreshExtensionsListAsync();
+            };
+            content.Children.Add(removeButton);
+
+            return new Border
+            {
+                Tag = $"extension {ext.Name} {ext.Description}",
+                Background = (System.Windows.Media.Brush)FindResource("SurfaceBrush"),
+                BorderBrush = (System.Windows.Media.Brush)FindResource("ChromeBorderBrush"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(14),
+                Margin = new Thickness(0, 0, 0, 10),
+                Child = content
+            };
         }
 
         // ============================= Passwords / Delete browsing data / Clear on close =============================

@@ -22,6 +22,7 @@ namespace RemiBrowser
         public static SearchEngineService SearchEngines { get; private set; } = null!;
         public static WebViewEnvironmentService WebViewEnvironments { get; private set; } = null!;
         public static UpdateService Updates { get; private set; } = null!;
+        public static ExtensionService Extensions { get; private set; } = null!;
 
         public static string AppDataFolder { get; private set; } = string.Empty;
 
@@ -94,6 +95,8 @@ namespace RemiBrowser
 
                 WebViewEnvironments = new WebViewEnvironmentService(AppDataFolder, Settings);
                 await WebViewEnvironments.InitializeNormalEnvironmentAsync();
+
+                Extensions = new ExtensionService(AppDataFolder);
 
                 Downloads = new DownloadService(Settings);
 

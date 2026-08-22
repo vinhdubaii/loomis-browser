@@ -127,6 +127,38 @@
         </Setter>
     </Style>
 
+    <!-- ===================== Extension Enable/Disable pill toggle =====================
+         Deliberately x:Key'd (not implicit) so it never leaks onto the plain
+         CheckBox look used everywhere else (e.g. "Show Bookmark Bar", "Ask
+         where to save each file") — same reasoning as the checkbox-style
+         look staying scoped in the rest of this file. Matches
+         chrome://extensions' pill-shaped Enable/Disable switch instead of a
+         checkmark box. -->
+    <Style x:Key="ExtensionToggleSwitch" TargetType="CheckBox">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="track" Width="36" Height="20" CornerRadius="10"
+                            Background="{DynamicResource ChromeBorderBrush}">
+                        <Border x:Name="knob" Width="16" Height="16" CornerRadius="8"
+                                Background="White" HorizontalAlignment="Left" Margin="2,0,0,0"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="track" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                            <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="knob" Property="Margin" Value="0,0,2,0"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ===================== RadioButton (default — NOT the sidebar nav one, which uses SettingsSidebarItem) ===================== -->
     <Style TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>

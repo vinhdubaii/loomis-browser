@@ -1,10 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Microsoft.Web.WebView2.Core;
 using RemiBrowser.Models;
 using RemiBrowser.Views;
@@ -58,6 +60,8 @@ namespace RemiBrowser
             LibraryPanelControl.CloseRequested += (_, _) => LibraryPanelControl.Visibility = Visibility.Collapsed;
 
             RebuildBookmarkBar();
+            RebuildPinnedExtensionIcons();
+            App.Extensions.ExtensionRemoved += (_, _) => RebuildPinnedExtensionIcons();
             ApplyCustomThemeBackground();
 
             PreviewKeyDown += MainWindow_PreviewKeyDown;
@@ -250,6 +254,14 @@ namespace RemiBrowser
             await Services.PasswordCaptureService.AttachAsync(tab.WebView.CoreWebView2, this);
 
             App.Downloads.Attach(tab.WebView.CoreWebView2);
+
+            // Extensions only ever load into the Normal profile (see
+            // WebViewEnvironmentService) — every normal tab shares the same
+            // CoreWebView2Profile, so re-attaching on each new tab is
+            // harmless, just redundant after the first. Never done in
+            // PrivateWindow.xaml.cs — private tabs must never expose the
+            // extension profile.
+            App.Extensions.AttachProfile(tab.WebView.CoreWebView2.Profile);
 
             if (initialUrl != null)
             {
@@ -556,6 +568,124 @@ namespace RemiBrowser
 
             if (LibraryPanelControl.Visibility == Visibility.Visible)
                 _ = LibraryPanelControl.RefreshAsync();
+        }
+
+        // ============================= Extensions (puzzle icon + pinned icons) =============================
+
+        private async void ExtensionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var extensions = await App.Extensions.GetInstalledAsync();
+            var popup = new ContextMenu();
+
+            if (extensions.Count == 0)
+            {
+                popup.Items.Add(new MenuItem { Header = "No extensions installed", IsEnabled = false });
+            }
+            else
+            {
+                foreach (var ext in extensions)
+                {
+                    var isPinned = App.Settings.Current.PinnedExtensionIds.Contains(ext.Id);
+                    var item = new MenuItem
+                    {
+                        Header = ext.Name,
+                        IsCheckable = true,
+                        IsChecked = isPinned,
+                        StaysOpenOnClick = true
+                    };
+                    item.Click += async (_, _) =>
+                    {
+                        var pinned = App.Settings.Current.PinnedExtensionIds;
+                        if (item.IsChecked && !pinned.Contains(ext.Id)) pinned.Add(ext.Id);
+                        else if (!item.IsChecked) pinned.Remove(ext.Id);
+                        await App.Settings.SaveAsync();
+                        RebuildPinnedExtensionIcons();
+                    };
+                    popup.Items.Add(item);
+                }
+            }
+
+            popup.Items.Add(new Separator());
+            var manageItem = new MenuItem { Header = "Manage extensions" };
+            manageItem.Click += (_, _) => OpenSettingsToExtensions();
+            popup.Items.Add(manageItem);
+
+            popup.PlacementTarget = ExtensionsButton;
+            popup.IsOpen = true;
+        }
+
+        /// <summary>
+        /// Renders one toolbar icon per pinned extension (in pin order),
+        /// immediately to the left of the puzzle icon — same "rebuild from
+        /// settings + live service state" shape as RebuildBookmarkBar().
+        /// Called once at startup, whenever pin state changes, and whenever
+        /// ExtensionService.ExtensionRemoved fires.
+        /// </summary>
+        private async void RebuildPinnedExtensionIcons()
+        {
+            PinnedExtensionsPanel.Children.Clear();
+
+            var installed = await App.Extensions.GetInstalledAsync();
+            var byId = installed.ToDictionary(x => x.Id);
+
+            foreach (var id in App.Settings.Current.PinnedExtensionIds)
+            {
+                if (!byId.TryGetValue(id, out var ext)) continue;
+
+                var button = new Button
+                {
+                    Style = (Style)FindResource("NavIconButton"),
+                    ToolTip = ext.Name
+                };
+
+                if (ext.IconPath != null && File.Exists(ext.IconPath))
+                {
+                    button.Content = new Image
+                    {
+                        Source = new BitmapImage(new Uri(ext.IconPath)),
+                        Width = 18,
+                        Height = 18
+                    };
+                }
+                else
+                {
+                    // Fallback to the same puzzle-piece glyph as ExtensionsButton
+                    // when the extension declared no icon of its own.
+                    button.Content = new System.Windows.Shapes.Path
+                    {
+                        Style = (Style)FindResource("NavIconPath"),
+                        Data = Geometry.Parse(
+                            "M2.5 6.5C2.5 8.70914 4.29086 10.5 6.5 10.5H9.16667C9.47666 10.5 9.63165 10.5 9.75882 10.4659C10.1039 10.3735 10.3735 10.1039 10.4659 9.75882C10.5 9.63165 10.5 9.47666 10.5 9.16667V6.5C10.5 4.29086 8.70914 2.5 6.5 2.5M17.5 21.5C15.2909 21.5 13.5 19.7091 13.5 17.5V14.8333C13.5 14.5233 13.5 14.3683 13.5341 14.2412C13.6265 13.8961 13.8961 13.6265 14.2412 13.5341C14.3683 13.5 14.5233 13.5 14.8333 13.5H17.5C19.7091 13.5 21.5 15.2909 21.5 17.5M2.5 17.5C2.5 15.2909 4.29086 13.5 6.5 13.5H8.9C9.46005 13.5 9.74008 13.5 9.95399 13.609C10.1422 13.7049 10.2951 13.8578 10.391 14.046C10.5 14.2599 10.5 14.5399 10.5 15.1V17.5C10.5 19.7091 8.70914 21.5 6.5 21.5C4.29086 21.5 2.5 19.7091 2.5 17.5ZM13.5 6.5C13.5 4.29086 15.2909 2.5 17.5 2.5C19.7091 2.5 21.5 4.29086 21.5 6.5C21.5 8.70914 19.7091 10.5 17.5 10.5H14.6429C14.5102 10.5 14.4438 10.5 14.388 10.4937C13.9244 10.4415 13.5585 10.0756 13.5063 9.61196C13.5 9.55616 13.5 9.48982 13.5 9.35714V6.5Z")
+                    };
+                }
+
+                button.Click += (_, _) => OnPinnedExtensionClicked(ext);
+                PinnedExtensionsPanel.Children.Add(button);
+            }
+        }
+
+        /// <summary>
+        /// Hybrid click behavior (WebView2 has no public API to render an
+        /// extension's own toolbar-popup HTML): if the extension declares an
+        /// options page, open it in a new tab; otherwise land on
+        /// Settings → Extensions, scrolled to that extension's card. A bare
+        /// click that did nothing would be the wrong default.
+        /// </summary>
+        private void OnPinnedExtensionClicked(InstalledExtension ext)
+        {
+            if (ext.HasOptionsPage)
+                _ = CreateNewTabAsync(ext.OptionsPageUrl);
+            else
+                OpenSettingsToExtensions(ext.Id);
+        }
+
+        private void OpenSettingsToExtensions(string? highlightExtensionId = null)
+        {
+            var currentUrls = Tabs.Select(t => t.IsNewTabPage ? "about:newtab" : t.Url).ToList();
+            var settingsWindow = new SettingsWindow(_activeTab?.WebView.CoreWebView2?.Profile, currentUrls) { Owner = this };
+            settingsWindow.SelectExtensionsPanel(highlightExtensionId);
+            if (settingsWindow.ShowDialog() == true)
+                ApplyCustomThemeBackground();
         }
 
         // ============================= Hamburger menu (☰) =============================

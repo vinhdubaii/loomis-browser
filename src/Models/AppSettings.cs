@@ -214,6 +214,15 @@ namespace RemiBrowser.Models
         public WindowSettings Window { get; set; } = new();
 
         /// <summary>
+        /// Extension IDs the user has pinned to the toolbar, in pin order
+        /// (most-recently-pinned last, rendered left-to-right nearest the
+        /// puzzle icon). Everything else about an extension (name, icon,
+        /// enabled state) is derived live from ExtensionService at render
+        /// time, not duplicated into settings.
+        /// </summary>
+        public List<string> PinnedExtensionIds { get; set; } = new();
+
+        /// <summary>
         /// URLs of every normal-window tab open at last shutdown (in order),
         /// saved by MainWindow just before closing, consumed by
         /// StartupMode.Continue / ContinueAndNewTab on next launch. "about:newtab"

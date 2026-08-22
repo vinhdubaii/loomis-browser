@@ -69,8 +69,15 @@ namespace RemiBrowser.Services
             var userDataFolder = Path.Combine(_appDataFolder, "WebView2Profile");
             Directory.CreateDirectory(userDataFolder);
 
-
-            var options = new CoreWebView2EnvironmentOptions(BuildBrowserArguments());
+            var options = new CoreWebView2EnvironmentOptions(BuildBrowserArguments())
+            {
+                // Required for CoreWebView2Profile.AddBrowserExtensionAsync and
+                // friends to work at all — must be set before the environment is
+                // created, can't be toggled afterward. Normal profile only: never
+                // set this on PrivateEnvironment below, matching Chromium's
+                // default of no extensions in Incognito.
+                AreBrowserExtensionsEnabled = true
+            };
             NormalEnvironment = await CoreWebView2Environment.CreateAsync(
                 browserExecutableFolder: FixedRuntimeFolder,
                 userDataFolder: userDataFolder,
