@@ -162,6 +162,11 @@ namespace RemiBrowser.Views
                     menu.VerticalOffset = e.Location.Y;
                     menu.IsOpen = true;
                 }
+                catch
+                {
+                    // See MainWindow's identical handler for why this is an
+                    // intentional silent catch, not an oversight.
+                }
                 finally
                 {
                     deferral.Complete();

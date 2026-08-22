@@ -44,6 +44,24 @@ namespace RemiBrowser.Services
         public static async Task<ContextMenu> BuildMenuAsync(
             ContextMenuHost host, CoreWebView2ContextMenuTarget target, Point location)
         {
+            try
+            {
+                return await ComposeMenuAsync(host, target, location);
+            }
+            catch
+            {
+                // Building the menu itself failing (rather than one item's
+                // action failing after a click - see ContextMenuActionHandler.
+                // RunSafe for that) shouldn't take the whole right-click down
+                // with a crash dialog. Fall back to just the always-safe
+                // Page + Trailing groups rather than showing nothing at all.
+                return Render(new List<ContextMenuGroup> { BuildPageGroup(host), BuildTrailingGroup(host) });
+            }
+        }
+
+        private static async Task<ContextMenu> ComposeMenuAsync(
+            ContextMenuHost host, CoreWebView2ContextMenuTarget target, Point location)
+        {
             var groups = new List<ContextMenuGroup>();
 
             var isVideo = target.Kind == CoreWebView2ContextMenuTargetKind.Video;
@@ -58,7 +76,7 @@ namespace RemiBrowser.Services
                 groups.Add(BuildLinkGroup(host, target));
 
             if (target.Kind == CoreWebView2ContextMenuTargetKind.Image)
-                groups.Add(BuildImageGroup(host, target));
+                groups.Add(BuildImageGroup(host, target, location));
 
             if (isMedia)
                 groups.Add(BuildMediaGroup(host, target, location, isVideo, mediaState));
@@ -107,11 +125,11 @@ namespace RemiBrowser.Services
                 {
                     Label = "Copy link",
                     IconKey = "Icon.CopyLink",
-                    OnClick = () => ContextMenuActionHandler.CopyLink(linkUri)
+                    OnClick = () => ContextMenuActionHandler.CopyLink(host, linkUri)
                 });
         }
 
-        private static ContextMenuGroup BuildImageGroup(ContextMenuHost host, CoreWebView2ContextMenuTarget target)
+        private static ContextMenuGroup BuildImageGroup(ContextMenuHost host, CoreWebView2ContextMenuTarget target, Point location)
         {
             var sourceUri = target.SourceUri;
             return new ContextMenuGroup(
@@ -125,13 +143,13 @@ namespace RemiBrowser.Services
                 {
                     Label = "Copy image",
                     IconKey = "Icon.CopyImage",
-                    OnClick = () => ContextMenuActionHandler.CopyImage(host, sourceUri)
+                    OnClick = () => ContextMenuActionHandler.CopyImage(host, location)
                 },
                 new ContextMenuEntry
                 {
                     Label = "Copy image link",
                     IconKey = "Icon.CopyLink",
-                    OnClick = () => ContextMenuActionHandler.CopyImageLink(sourceUri)
+                    OnClick = () => ContextMenuActionHandler.CopyImageLink(host, sourceUri)
                 });
 
             // "Magnify image" intentionally excluded - Edge-specific zoom

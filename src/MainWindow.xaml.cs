@@ -345,6 +345,18 @@ namespace RemiBrowser
                     menu.VerticalOffset = e.Location.Y;
                     menu.IsOpen = true;
                 }
+                catch
+                {
+                    // BuildMenuAsync already falls back internally on a
+                    // build failure (see its own try/catch); this is the
+                    // last line of defense for anything past that point
+                    // (Render, opening the menu itself). e.Handled is
+                    // already true above, so the native menu stays
+                    // suppressed either way - worst case here is simply no
+                    // menu appears for this one right-click, which is far
+                    // better than the app-wide crash dialog this used to
+                    // produce.
+                }
                 finally
                 {
                     deferral.Complete();

@@ -14,13 +14,20 @@
          fresh ContentControl per MenuItem so each gets its own instantiation
          of the visual tree.
 
+         Sizing: each <Viewbox> below has no explicit Width/Height - it
+         stretches to fill whatever size the icon ContentPresenter in
+         ControlStyles.xaml's MenuItem template gives it (currently 22x22,
+         bumped 2026-08-22 from 16x16 for a bigger/easier-to-read menu
+         overall). Changing the menu's icon size in the future only needs
+         that one ContentPresenter Width/Height changed, not all 25 of these.
+
          Color: every Stroke/Fill below binds to TextSecondaryBrush (already
          defined in Themes/Light.xaml + Dark.xaml) instead of the source
          SVGs' literal #1C274C, so one resource swap re-themes every icon
          automatically. -->
 
     <DataTemplate x:Key="Icon.OpenLinkNewWindow">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M2 11.9997C2 7.28562 2 4.9286 3.46447 3.46413C4.70529 2.22331 6.58687 2.03382 10 2.00488M22 11.9997C22 7.28562 22 4.9286 20.5355 3.46413C19.2947 2.22331 17.4131 2.03382 14 2.00488"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -33,7 +40,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.SaveLinkAs">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M12 7L12 14M12 14L15 11M12 14L9 11"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
@@ -47,7 +54,7 @@
 
     <!-- Reused for "Copy image link" too (guide 3.2 - intentional). -->
     <DataTemplate x:Key="Icon.CopyLink">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M10 15H12C15.3137 15 18 12.3137 18 9C18 5.68629 15.3137 3 12 3H8C4.68629 3 2 5.68629 2 9C2 10.5367 2.57771 11.9385 3.52779 13M16 21C19.3137 21 22 18.3137 22 15C22 13.4633 21.4223 12.0615 20.4722 11M12 21C8.68629 21 6 18.3137 6 15C6 11.6863 8.68629 9 12 9H14"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -56,7 +63,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.SaveImageAs">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M13 2.5V5C13 7.35702 13 8.53553 13.7322 9.26777C14.4645 10 15.643 10 18 10H22"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5"/>
@@ -70,7 +77,7 @@
 
     <!-- Reused for "Copy" (selection/editable) too (guide 3.2 - intentional). -->
     <DataTemplate x:Key="Icon.CopyImage">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M20.9983 10C20.9862 7.82497 20.8897 6.64706 20.1213 5.87868C19.2426 5 17.8284 5 15 5H12C9.17157 5 7.75736 5 6.87868 5.87868C6 6.75736 6 8.17157 6 11V16C6 18.8284 6 20.2426 6.87868 21.1213C7.75736 22 9.17157 22 12 22H15C17.8284 22 19.2426 22 20.1213 21.1213C21 20.2426 21 18.8284 21 16V15"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -82,7 +89,7 @@
 
     <!-- Unused in the current menu (guide 2.5 excludes "Magnify image" from the plan) - kept in reserve. -->
     <DataTemplate x:Key="Icon.MagnifyImage">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M18.5 18.5L22 22"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -96,7 +103,7 @@
 
     <!-- Pure solid-fill glyph, no stroke elements in the source SVG. -->
     <DataTemplate x:Key="Icon.Loop">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M9.5 19.75C9.91421 19.75 10.25 19.4142 10.25 19C10.25 18.5858 9.91421 18.25 9.5 18.25V19.75ZM11 5V5.75C11.3033 5.75 11.5768 5.56727 11.6929 5.28701C11.809 5.00676 11.7448 4.68417 11.5303 4.46967L11 5ZM9.53033 2.46967C9.23744 2.17678 8.76256 2.17678 8.46967 2.46967C8.17678 2.76256 8.17678 3.23744 8.46967 3.53033L9.53033 2.46967ZM1.25 12C1.25 12.4142 1.58579 12.75 2 12.75C2.41421 12.75 2.75 12.4142 2.75 12H1.25ZM3.86991 15.5709C3.63293 15.2312 3.16541 15.1479 2.82569 15.3849C2.48596 15.6219 2.40267 16.0894 2.63965 16.4291L3.86991 15.5709ZM9.5 18.25H9.00028V19.75H9.5V18.25ZM9 5.75H11V4.25H9V5.75ZM11.5303 4.46967L9.53033 2.46967L8.46967 3.53033L10.4697 5.53033L11.5303 4.46967ZM2.75 12C2.75 8.54822 5.54822 5.75 9 5.75V4.25C4.71979 4.25 1.25 7.71979 1.25 12H2.75ZM2.63965 16.4291C4.03893 18.435 6.36604 19.75 9.00028 19.75V18.25C6.87703 18.25 5.00068 17.1919 3.86991 15.5709L2.63965 16.4291Z"
                       Fill="{DynamicResource TextSecondaryBrush}"/>
@@ -107,7 +114,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.ShowAllControls">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M22 3L2 3"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -120,7 +127,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.SaveVideoAs">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M20.5 7V13C20.5 16.7712 20.5 18.6569 19.3284 19.8284C18.1569 21 16.2712 21 12.5 21H11.5M3.5 7V13C3.5 16.7712 3.5 18.6569 4.67157 19.8284C5.37634 20.5332 6.3395 20.814 7.81608 20.9259"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -133,7 +140,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.SaveVideoFrameAs">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M2 12.0002C2 7.28611 2 4.92909 3.46447 3.46462C4.70529 2.2238 6.58687 2.03431 10 2.00537M22 12.0002C22 7.28611 22 4.92909 20.5355 3.46462C19.2947 2.2238 17.4131 2.03431 14 2.00537"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -146,7 +153,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.CopyVideoFrame">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M22 13.4375C22 17.2087 22 19.0944 20.8284 20.2659C19.6569 21.4375 17.7712 21.4375 14 21.4375H10C6.22876 21.4375 4.34315 21.4375 3.17157 20.2659C2 19.0944 2 17.2087 2 13.4375C2 9.66626 2 7.78065 3.17157 6.60907C4.34315 5.4375 6.22876 5.4375 10 5.4375H14C17.7712 5.4375 19.6569 5.4375 20.8284 6.60907C21.4921 7.27271 21.7798 8.16545 21.9045 9.50024"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -161,7 +168,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.PictureInPicture">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M11 21H10C6.22876 21 4.34315 21 3.17157 19.8284C2 18.6569 2 16.7712 2 13V11M22 11C22 7.22876 22 5.34315 20.8284 4.17157C19.6569 3 17.7712 3 14 3H10C6.22876 3 4.34315 3 3.17157 4.17157C2.51839 4.82475 2.22937 5.69989 2.10149 7"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -172,7 +179,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.Back">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M4 7H15C17.7614 7 20 9.23857 20 12C20 14.7614 17.7614 17 15 17M4 7L7 4M4 7L7 10M8.00001 17H11"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
@@ -181,7 +188,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.Forward">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M20 7H9C6.23857 7 4 9.23857 3.99999 12C3.99999 14.7614 6.23857 17 8.99999 17M20 7L17 4M20 7L17 10M16 17H13"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
@@ -190,7 +197,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.Refresh">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M7.37756 11.6296H6.62756H7.37756ZM7.37756 12.5556L6.81609 13.0528C6.95137 13.2056 7.14306 13.2966 7.34695 13.3049C7.55084 13.3133 7.74932 13.2382 7.89662 13.0969L7.37756 12.5556ZM9.51905 11.5414C9.81805 11.2547 9.82804 10.7799 9.54137 10.4809C9.2547 10.182 8.77994 10.172 8.48095 10.4586L9.51905 11.5414ZM6.56148 10.5028C6.28686 10.1927 5.81286 10.1639 5.50277 10.4385C5.19267 10.7131 5.16391 11.1871 5.43852 11.4972L6.56148 10.5028ZM14.9317 9.0093C15.213 9.31337 15.6875 9.33184 15.9915 9.05055C16.2956 8.76927 16.3141 8.29476 16.0328 7.9907L14.9317 9.0093ZM12.0437 6.25C9.05802 6.25 6.62756 8.653 6.62756 11.6296H8.12756C8.12756 9.49251 9.87531 7.75 12.0437 7.75V6.25ZM6.62756 11.6296L6.62756 12.5556H8.12756L8.12756 11.6296H6.62756ZM7.89662 13.0969L9.51905 11.5414L8.48095 10.4586L6.85851 12.0142L7.89662 13.0969ZM7.93904 12.0583L6.56148 10.5028L5.43852 11.4972L6.81609 13.0528L7.93904 12.0583ZM16.0328 7.9907C15.0431 6.9209 13.6212 6.25 12.0437 6.25V7.75C13.1879 7.75 14.2154 8.23504 14.9317 9.0093L16.0328 7.9907Z"
                       Fill="{DynamicResource TextSecondaryBrush}"/>
@@ -203,7 +210,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.SaveAs">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M8.5 7L8.5 14M8.5 14L11 11M8.5 14L6 11"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
@@ -218,7 +225,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.Print">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M9 10H6"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -238,7 +245,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.ViewPageSource">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M15.5 9L15.6716 9.17157C17.0049 10.5049 17.6716 11.1716 17.6716 12C17.6716 12.8284 17.0049 13.4951 15.6716 14.8284L15.5 15"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -253,7 +260,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.SearchWith">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M18.5 18.5L22 22"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -265,7 +272,7 @@
 
     <!-- Mixed: cut lines + handle circle are one stroked path, the small blade-pivot shape is solid fill. -->
     <DataTemplate x:Key="Icon.Cut">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M16.4013 20.5L6 2M22 19C22 20.6569 20.6569 22 19 22C17.3431 22 16 20.6569 16 19C16 17.3431 17.3431 16 19 16C20.6569 16 22 17.3431 22 19Z"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -276,7 +283,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.Paste">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M21 16.0002C21 18.8286 21 20.2429 20.1213 21.1215C19.2426 22.0002 17.8284 22.0002 15 22.0002H9C6.17157 22.0002 4.75736 22.0002 3.87868 21.1215C3 20.2429 3 18.8286 3 16.0002V13.0002M16 4.00195C18.175 4.01406 19.3529 4.11051 20.1213 4.87889C21 5.75757 21 7.17179 21 10.0002V12.0002M8 4.00195C5.82497 4.01406 4.64706 4.11051 3.87868 4.87889C3.11032 5.64725 3.01385 6.82511 3.00174 9"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -293,7 +300,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.SelectAll">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M8 3.5C8 2.67157 8.67157 2 9.5 2H14.5C15.3284 2 16 2.67157 16 3.5V4.5C16 5.32843 15.3284 6 14.5 6H9.5C8.67157 6 8 5.32843 8 4.5V3.5Z"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5"/>
@@ -307,7 +314,7 @@
 
     <!-- Not currently used - "Share" is deferred (guide 2.5), kept in reserve. -->
     <DataTemplate x:Key="Icon.Share">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M12 3C10.3431 3 9 4.34315 9 6C9 7.65685 10.3431 9 12 9C13.6569 9 15 7.65685 15 6"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
@@ -323,7 +330,7 @@
 
     <!-- Custom Remi glyph - shares its "document" strokes with SaveImageAs's fold, plus two solid dot "eyes" (Add to Remi's distinguishing feature) and one big fill path for the smiling-folder body. -->
     <DataTemplate x:Key="Icon.AddToRemi">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Path Data="M13 2.5V5C13 7.35702 13 8.53553 13.7322 9.26777C14.4645 10 15.643 10 18 10H22"
                       Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5"/>
@@ -338,7 +345,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="Icon.Inspect">
-        <Viewbox Width="16" Height="16">
+        <Viewbox>
             <Canvas Width="24" Height="24">
                 <Ellipse Canvas.Left="6" Canvas.Top="8" Width="4" Height="4" Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5"/>
                 <Ellipse Canvas.Left="14" Canvas.Top="12" Width="4" Height="4" Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.5"/>
